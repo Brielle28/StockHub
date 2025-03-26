@@ -21,13 +21,13 @@ const Home = () => {
 
           <div className="flex space-x-4 justify-center md:justify-start">
             <a
-              href="#"
+              href="/login"
               className="flex items-center bg-transparent border-[1px] border-[#d4fb2b] text-white font-medium px-8 py-1 rounded-full hover:bg-[#d4fb2b] hover:text-black"
             >
               Login
             </a>
             <a
-              href="#"
+              href="/signUp"
               className="flex items-center bg-transparent border-[1px] border-[#d4fb2b] text-white font-medium px-4 py-1 rounded-full hover:bg-[#d4fb2b] hover:text-black"
             >
               Get Started
@@ -40,6 +40,7 @@ const Home = () => {
           <div className="relative w-64 md:w-80 lg:w-96">
             <img
               src="/phone.png"
+              // src="/phone.webp"
               alt="Stoxis Trading App"
               className="w-full h-auto transform shadow-2xl rounded-3xl"
             />
