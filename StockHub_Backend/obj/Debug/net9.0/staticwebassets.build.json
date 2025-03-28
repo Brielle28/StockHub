@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "k3DLsxjeqc1QVO2fe8adJZ9PJtUodbxBUtALNy0YqZA=",
+  "Source": "StockHub_Backend",
+  "BasePath": "_content/StockHub_Backend",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}
