@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Mvc;
 using StockHub_Backend.Data;
+using StockHub_Backend.Dtos.Stock;
+using StockHub_Backend.Mappers;
 
 namespace StockHub_Backend.Controllers
 {
@@ -20,25 +22,41 @@ namespace StockHub_Backend.Controllers
 
         [HttpGet]
 
-         public IActionResult GetAll()
-         {
-            var stocks = _context.Stock.ToList();
+        public IActionResult GetAll()
+        {
+            //method 1 - dto using mapper
+            var stocks = _context.Stock.ToList()
+            .Select(s => s.ToStockDto());
+            return Ok (stocks);
 
-            return Ok(stocks);
+            //method 2 - dto creating it manually
+            // var stocks = _context.Stock;
+            // var stockDto =stocks.Select (stocks =>new StockDto
+            // {
+            //     Id = stocks.Id,
+            //     Symbol = stocks.Symbol,
+            //     CompanyName = stocks.CompanyName,
+            //     Purchase = stocks.Purchase,
+            //     LastDiv = stocks.LastDiv,
+            //     Industry = stocks.Industry,
+            //     MarketCap = stocks.MarketCap
+            // }).ToList();
+            // return Ok(stockDto);
 
-         }
+        }
 
-         [HttpGet("{id}")]
+        [HttpGet("{id}")]
 
-         public IActionResult GetById([FromRoute] int id)
-         {
+        public IActionResult GetById([FromRoute] int id)
+        {
             var stock = _context.Stock.Find(id);
 
             if (stock == null)
             {
                 return NotFound();
             }
-            return Ok(stock);
-         }
+            return Ok(stock.ToStockDto());
+
+        }
     }
 }
