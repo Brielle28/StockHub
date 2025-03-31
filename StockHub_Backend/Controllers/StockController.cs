@@ -58,5 +58,39 @@ namespace StockHub_Backend.Controllers
             return Ok(stock.ToStockDto());
 
         }
+
+        
+        [HttpPost]
+        [Route("/StockHub/PostStock")]
+        public IActionResult Create([FromBody] CreateStockRequest RequestDto)
+        {
+            var StockModel = RequestDto.ToCreateStockDto();
+            _context.Stock.Add(StockModel);
+            _context.SaveChanges();
+            return CreatedAtAction(nameof(GetById), new {Id = StockModel.Id}, StockModel.ToStockDto());
+        }
+
+        [HttpPut]
+        [Route("{id}")]
+        public IActionResult Update([FromRoute] int id, [FromBody] StockUpdateDto updateStock)
+        {
+            var StockModel = _context.Stock.FirstOrDefault(X => X.Id == id);
+
+            if (StockModel == null)
+            {
+                return NotFound();
+            }
+
+            StockModel.Symbol = updateStock.Symbol;
+            StockModel.CompanyName = updateStock.CompanyName;
+            StockModel.Purchase = updateStock.Purchase;
+            StockModel.LastDiv = updateStock.LastDiv;
+            StockModel.Industry = updateStock.Industry;
+            StockModel.MarketCap = updateStock.MarketCap;
+
+            _context.SaveChanges();
+
+            return Ok(StockModel.ToStockDto());
+        }
     }
 }
