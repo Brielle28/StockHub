@@ -1,21 +1,36 @@
 using Microsoft.EntityFrameworkCore;
 using StockHub_Backend.Data;
+using StockHub_Backend.Interfaces;
+using StockHub_Backend.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// ✅ Add Swagger
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddControllers();
-builder.Services.AddOpenApi();
-builder.Services.AddDbContext<ApplicationDBContext> (options => {
+
+// ✅ Configure Database Context
+builder.Services.AddDbContext<ApplicationDBContext>(options =>
+{
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
+
+// ✅ Register Repositories
+builder.Services.AddScoped<IStockRepository, StockRepository>();
+builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+
+// ✅ Register Controllers with Newtonsoft.Json (Corrected DI)
+builder.Services
+    .AddControllers()
+    .AddNewtonsoftJson(options =>
+        options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+    );
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// ✅ Enable Swagger only in Development
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI();
 }

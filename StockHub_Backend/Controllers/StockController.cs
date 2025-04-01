@@ -1,96 +1,72 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-
 using Microsoft.AspNetCore.Mvc;
-using StockHub_Backend.Data;
 using StockHub_Backend.Dtos.Stock;
+using StockHub_Backend.Interfaces;
 using StockHub_Backend.Mappers;
+using StockHub_Backend.Models;
 
 namespace StockHub_Backend.Controllers
 {
-    [Route("stockHub/stocks")]
+    [Route("api/stocks")]
     [ApiController]
     public class StockController : ControllerBase
     {
-        private readonly ApplicationDBContext _context;
-        public StockController(ApplicationDBContext context)
+        private readonly IStockRepository _stockRepo;
+
+        public StockController(IStockRepository stockRepo)
         {
-            _context = context;
+            _stockRepo = stockRepo;
         }
 
         [HttpGet]
-
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            //method 1 - dto using mapper
-            var stocks = _context.Stock.ToList()
-            .Select(s => s.ToStockDto());
-            return Ok (stocks);
-
-            //method 2 - dto creating it manually
-            // var stocks = _context.Stock;
-            // var stockDto =stocks.Select (stocks =>new StockDto
-            // {
-            //     Id = stocks.Id,
-            //     Symbol = stocks.Symbol,
-            //     CompanyName = stocks.CompanyName,
-            //     Purchase = stocks.Purchase,
-            //     LastDiv = stocks.LastDiv,
-            //     Industry = stocks.Industry,
-            //     MarketCap = stocks.MarketCap
-            // }).ToList();
-            // return Ok(stockDto);
-
+            var stocks = await _stockRepo.GetAllAsync();
+            var stockDtos = stocks.Select(s => s.ToStockDto());
+            return Ok(stockDtos);
         }
 
         [HttpGet("{id}")]
-
-        public IActionResult GetById([FromRoute] int id)
+        public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            var stock = _context.Stock.Find(id);
-
+            var stock = await _stockRepo.GetByIdAsync(id);
             if (stock == null)
             {
                 return NotFound();
             }
             return Ok(stock.ToStockDto());
-
         }
 
-        
         [HttpPost]
-        [Route("/StockHub/PostStock")]
-        public IActionResult Create([FromBody] CreateStockRequest RequestDto)
+        public async Task<IActionResult> Create([FromBody] CreateStockRequest requestDto)
         {
-            var StockModel = RequestDto.ToCreateStockDto();
-            _context.Stock.Add(StockModel);
-            _context.SaveChanges();
-            return CreatedAtAction(nameof(GetById), new {Id = StockModel.Id}, StockModel.ToStockDto());
+            var stockModel = requestDto.ToCreateStockDto();
+            await _stockRepo.CreateAsync(stockModel);
+            return CreatedAtAction(nameof(GetById), new { id = stockModel.Id }, stockModel.ToStockDto());
         }
 
-        [HttpPut]
-        [Route("{id}")]
-        public IActionResult Update([FromRoute] int id, [FromBody] StockUpdateDto updateStock)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update([FromRoute] int id, [FromBody] StockUpdateDto updateStock)
         {
-            var StockModel = _context.Stock.FirstOrDefault(X => X.Id == id);
-
-            if (StockModel == null)
+            var success = await _stockRepo.UpdateAsync(id, updateStock);
+            if (!success)
             {
                 return NotFound();
             }
+            return Ok(new { Message = "Stock updated successfully." });
+        }
 
-            StockModel.Symbol = updateStock.Symbol;
-            StockModel.CompanyName = updateStock.CompanyName;
-            StockModel.Purchase = updateStock.Purchase;
-            StockModel.LastDiv = updateStock.LastDiv;
-            StockModel.Industry = updateStock.Industry;
-            StockModel.MarketCap = updateStock.MarketCap;
-
-            _context.SaveChanges();
-
-            return Ok(StockModel.ToStockDto());
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete([FromRoute] int id)
+        {
+            var success = await _stockRepo.DeleteAsync(id);
+            if (!success)
+            {
+                return NotFound();
+            }
+            return NoContent();
         }
     }
 }

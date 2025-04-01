@@ -16,7 +16,8 @@ namespace StockHub_Backend.Mappers
                 LastDiv = stockModel.LastDiv,
                 Purchase = stockModel.Purchase,
                 Industry = stockModel.Industry,
-                MarketCap = stockModel.MarketCap
+                MarketCap = stockModel.MarketCap,
+                comments = stockModel.Comments.Select( c=>c.ToCommentDto()).ToList()
             };
         }
     }
