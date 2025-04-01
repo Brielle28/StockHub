@@ -12,5 +12,6 @@ namespace StockHub_Backend.Interfaces
         Task<Stock> CreateAsync(Stock stockModel);
         Task<bool> UpdateAsync(int id, StockUpdateDto updateStock);
         Task<bool> DeleteAsync(int id);
+        Task<bool> stockExist (int id);
     }
 }

@@ -65,5 +65,10 @@ namespace StockHub_Backend.Repository
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public Task<bool> stockExist(int Id)
+        {
+            return _context.Stock.AnyAsync(s => s.Id == Id);
+        }
     }
 }
