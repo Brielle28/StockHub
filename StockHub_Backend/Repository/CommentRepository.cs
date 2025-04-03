@@ -34,7 +34,7 @@ namespace StockHub_Backend.Repository
             return commentModel;
         }
 
-        public async Task<Comment?> UpdateAsync (int id, UpdateCommentDto updatedComment)
+        public async Task<Comment?> UpdateAsync(int id, UpdateCommentDto updatedComment)
         {
             var existingComment = await _context.Comments.FindAsync(id);
             if (existingComment == null)
@@ -47,6 +47,19 @@ namespace StockHub_Backend.Repository
 
             await _context.SaveChangesAsync();  // Use SaveChangesAsync for async operation
             return existingComment;
+        }
+
+        public async Task<Comment?> DeleteAsync(int id)
+        {
+            var comment = await _context.Comments.FirstOrDefaultAsync(c => c.Id == id);
+            if (comment == null)
+            {
+                return null;
+            }
+
+            _context.Comments.Remove(comment);
+            await _context.SaveChangesAsync();
+            return comment;
         }
     }
 }

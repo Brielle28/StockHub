@@ -2,7 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using StockHub_Backend.Data;
 using StockHub_Backend.Interfaces;
 using StockHub_Backend.Repository;
-
+using StackExchange.Redis;
+using StockHub_Backend.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // ✅ Add Swagger
@@ -25,6 +26,10 @@ builder.Services
     .AddNewtonsoftJson(options =>
         options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
     );
+// ✅ Registering redis connection and the services as well 
+var redisConnection = ConnectionMultiplexer.Connect(builder.Configuration["Redis:ConnectionString"]!);
+builder.Services.AddSingleton(redisConnection);
+builder.Services.AddSingleton<ICacheService, RedisCacheService>(); 
 
 var app = builder.Build();
 
