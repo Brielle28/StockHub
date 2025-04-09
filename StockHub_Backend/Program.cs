@@ -4,6 +4,7 @@ using StockHub_Backend.Interfaces;
 using StockHub_Backend.Repository;
 using StackExchange.Redis;
 using StockHub_Backend.Services;
+using StockHub_Backend.Services.Kafka;
 var builder = WebApplication.CreateBuilder(args);
 
 // ✅ Add Swagger
@@ -19,6 +20,7 @@ builder.Services.AddDbContext<ApplicationDBContext>(options =>
 // ✅ Register Repositories
 builder.Services.AddScoped<IStockRepository, StockRepository>();
 builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+builder.Services.AddSingleton<IKafkaProducer, KafkaProducer>();
 
 // ✅ Register Controllers with Newtonsoft.Json (Corrected DI)
 builder.Services
