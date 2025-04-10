@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("StockHub_Backend")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6f6f8d6d64c503360af90eb69e4411b6ed792b6a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8349d4b9f90f383cf776ec87da35333bfe0651e7")]
 [assembly: System.Reflection.AssemblyProductAttribute("StockHub_Backend")]
 [assembly: System.Reflection.AssemblyTitleAttribute("StockHub_Backend")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
