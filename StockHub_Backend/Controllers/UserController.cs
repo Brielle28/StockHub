@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using StockHub_Backend.Dtos.Users;
 using StockHub_Backend.Models;
+using StockHub_Backend.Services.TokenServices;
 
 namespace StockHub_Backend.Controllers
 {
@@ -14,9 +15,12 @@ namespace StockHub_Backend.Controllers
     public class UserController : ControllerBase
     {
         private readonly UserManager<AppUser> _userManager;
-        public UserController(UserManager<AppUser> userManager)
+
+        private readonly ITokenService _tokenService;
+        public UserController(UserManager<AppUser> userManager, ITokenService tokenService)
         {
             _userManager = userManager;
+            _tokenService = tokenService;
         }
 
         [HttpPost("register")]
@@ -44,7 +48,14 @@ namespace StockHub_Backend.Controllers
                   var roleResult = await _userManager.AddToRoleAsync(AppUser, "User"); 
                   if (roleResult.Succeeded)
                   {
-                    return Ok("User created");
+                    return Ok(
+                        new NewUserDto
+                        {
+                            UserName = AppUser.UserName,
+                            Email = AppUser.Email,
+                            Token = _tokenService.createToken(AppUser)
+                        }
+                    );
                   } else {
                     return StatusCode(500, roleResult.Errors);
                   }

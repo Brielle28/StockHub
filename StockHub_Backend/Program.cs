@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using StockHub_Backend.Services.TokenServices;
 var builder = WebApplication.CreateBuilder(args);
 
 // ✅ Add Swagger
@@ -24,10 +25,11 @@ builder.Services.AddDbContext<ApplicationDBContext>(options =>
 
 // ✅ Register Repositories
 builder.Services.AddScoped<IStockRepository, StockRepository>();
+builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<ICommentRepository, CommentRepository>();
 builder.Services.AddSingleton<IKafkaProducer, KafkaProducer>();
 
-// ✅ Register Controllers with Newtonsoft.Json (Corrected DI)
+// ✅ Register Controllers with Newtonsoft.Json
 builder.Services
     .AddControllers()
     .AddNewtonsoftJson(options =>
@@ -48,7 +50,6 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
     options.Password.RequiredLength = 12;
 })
 .AddEntityFrameworkStores<ApplicationDBContext>();
-// .AddDefaultTokenProviders());
 
 //registering a scheme
 builder.Services.AddAuthentication(options => {
