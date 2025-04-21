@@ -4,10 +4,6 @@ const Home = () => {
   return (
     <>
       <div className="w-full md:w-[75%] flex flex-col items-center justify-center text-center px-8 md:px-11 mt-14">
-        {/* <button className="flex items-center justify-center gap-1 px-3 py-2 rounded-[30px] bg-[#1A1C0D] text-[#d4fb2b]">
-          <FaSpaceShuttle className="-rotate-45 size-[25px]" />
-          <h1 className="text-[15px] font-semibold">GROW FASTER</h1>{" "}
-        </button> */}
         <div className="w-full flex flex-col items-center justify-center text-center mt-">
           <h1 className="text-[45px] text-gray-300 font-bold mb-5 leading-[50px]">
             Precision Investing and Personalized Insights with{" "}
