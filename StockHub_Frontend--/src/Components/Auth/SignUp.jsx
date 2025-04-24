@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FaEye, FaEyeSlash, FaGoogle, FaApple } from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaGoogle, FaUser, FaEnvelope, FaLock } from "react-icons/fa";
 
 const SignUp = () => {
   const [firstName, setFirstName] = useState("");
@@ -37,81 +37,105 @@ const SignUp = () => {
   };
 
   return (
-    <div className="w-[50%] min-h-screen bg-transparent flex items-center justify-center">
-      <div className="w-full max-w-md bg-transparent rounded-xl shadow-lg p-3">
-        <h2 className="text-[40px] font-bold text-[#d4fb2b] text-center mb-4">
+    <div className="w-full lg:w-[50%] h-screen overflow-y-scroll flex items-center justify-center px-4 py-8 sm:py-12 bg-transparent">
+      <div className="w-full max-w-[550px] bg-[#0c0c0c] rounded-2xl shadow-2xl p-5 md:p-8 md:mt-14 mt-52">
+        <h2 className="text-xl md:text-4xl font-bold text-[#d4fb2b] text-center mb-3">
           Create an account
         </h2>
 
-        <p className="text-gray-400 text-center mb-6">
+        <p className="text-gray-400 text-center mb-4">
           Already have an account?
           <a href="/login" className="text-[#d4fb2b] ml-1 hover:underline">
             Login
           </a>
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex space-x-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1 group">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FaUser className="text-gray-400 w-5 h-5 group-focus-within:text-[#d4fb2b] transition-colors" />
+              </div>
+              <input
+                type="text"
+                placeholder="First name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 bg-[#111111] border border-[#333333] focus:border-[#d4fb2b] rounded-lg focus:outline-none focus:ring-0 text-gray-300 placeholder:text-gray-500 transition-all"
+                required
+              />
+            </div>
+            
+            <div className="relative flex-1 group">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FaUser className="text-gray-400 w-5 h-5 group-focus-within:text-[#d4fb2b] transition-colors" />
+              </div>
+              <input
+                type="text"
+                placeholder="Last name"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 bg-[#111111] border border-[#333333] focus:border-[#d4fb2b] rounded-lg focus:outline-none focus:ring-0 text-gray-300 placeholder:text-gray-500 transition-all"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FaEnvelope className="text-gray-400 w-5 h-5 group-focus-within:text-[#d4fb2b] transition-colors" />
+            </div>
             <input
-              type="text"
-              placeholder="First name"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-[#d4fb2b] rounded-lg focus:outline-none focus:ring-0 text-gray-300 placeholder:text-gray-300"
-              required
-            />
-            <input
-              type="text"
-              placeholder="Last name"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-[#d4fb2b] rounded-lg focus:outline-none focus:ring-0 text-gray-300 placeholder:text-gray-300"
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 bg-[#111111] border border-[#333333] focus:border-[#d4fb2b] rounded-lg focus:outline-none focus:ring-0 text-gray-300 placeholder:text-gray-500 transition-all"
               required
             />
           </div>
 
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-[#d4fb2b] rounded-lg focus:outline-none focus:ring-0 text-gray-300 placeholder:text-gray-300"
-            required
-          />
-
-          <div className="relative">
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FaLock className="text-gray-400 w-5 h-5 group-focus-within:text-[#d4fb2b] transition-colors" />
+            </div>
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-[#d4fb2b] rounded-lg focus:outline-none focus:ring-0 text-gray-300 placeholder:text-gray-300"
+              className="w-full pl-10 pr-12 py-3 bg-[#111111] border border-[#333333] focus:border-[#d4fb2b] rounded-lg focus:outline-none focus:ring-0 text-gray-300 placeholder:text-gray-500 transition-all"
               required
             />
             <button
               type="button"
               onClick={togglePasswordVisibility}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-[#d4fb2b] transition-colors"
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
-              {showPassword ? <FaEyeSlash /> : <FaEye />}
+              {showPassword ? <FaEyeSlash className="w-5 h-5" /> : <FaEye className="w-5 h-5" />}
             </button>
           </div>
 
-          <div className="relative">
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FaLock className="text-gray-400 w-5 h-5 group-focus-within:text-[#d4fb2b] transition-colors" />
+            </div>
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Confirm password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-[#d4fb2b] rounded-lg focus:outline-none focus:ring-0 text-gray-300 placeholder:text-gray-300"
+              className="w-full pl-10 pr-12 py-3 bg-[#111111] border border-[#333333] focus:border-[#d4fb2b] rounded-lg focus:outline-none focus:ring-0 text-gray-300 placeholder:text-gray-500 transition-all"
               required
             />
             <button
               type="button"
               onClick={togglePasswordVisibility}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-[#d4fb2b] transition-colors"
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
-              {showPassword ? <FaEyeSlash /> : <FaEye />}
+              {showPassword ? <FaEyeSlash className="w-5 h-5" /> : <FaEye className="w-5 h-5" />}
             </button>
           </div>
 
@@ -121,41 +145,36 @@ const SignUp = () => {
               id="terms"
               checked={termsAccepted}
               onChange={() => setTermsAccepted(!termsAccepted)}
-              className="checkbox rounded-[5px] size-5 mr-3"
-              style={{
-                borderColor: "#d4fb2b",
-                backgroundColor: termsAccepted ? "#d4fb2b" : "transparent",
-              }}
+              className="w-5 h-5 mr-3 rounded-md focus:ring-[#d4fb2b] text-[#d4fb2b] border-gray-600 bg-transparent"
             />
-            <label htmlFor="terms" className="text-gray-400">
-              I agree to the Terms & Conditions
+            <label htmlFor="terms" className="text-gray-400 text-sm cursor-pointer select-none">
+              I agree to the <a href="#" className="text-[#d4fb2b] hover:underline">Terms & Conditions</a>
             </label>
           </div>
 
           <button
             type="submit"
-            className="w-full bg-[#d4fb2b] text-black font-medium py-2 rounded-lg transition duration-300"
+            className="w-full bg-[#d4fb2b] text-black font-medium py-3 rounded-lg hover:bg-[#c0e429] transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
           >
             Create Account
           </button>
         </form>
-        <div className="my-4  w-full flex items-center justify-between">
-          <div className="h-[2px] w-[170px] bg-white" />
-          <h1 className="text-white">OR</h1>
-          <div className="h-[2px] w-[170px] bg-white " />
-          <div />
+
+        <div className="my-3 flex items-center justify-between">
+          <div className="h-[1px] flex-1 bg-gray-700" />
+          <h1 className="text-gray-400 mx-4 text-sm">OR</h1>
+          <div className="h-[1px] flex-1 bg-gray-700" />
         </div>
 
         <div className="space-y-4">
           <button
-            type="submit"
-            className="flex items-center justify-center w-full bg-[#565f17] text-black font-medium py-2 rounded-lg hover:bg-[#d4fb2b] transition duration-300"
+            type="button"
+            className="flex items-center justify-center w-full bg-[#1e2104] text-white font-medium py-3 rounded-lg hover:bg-[#2d3206] transition-all duration-300"
           >
-            <FaGoogle className="mr-3 text-black" size={20} />
-            Sign In With Google
+            <FaGoogle className="mr-3 text-[#d4fb2b]" size={18} />
+            <span>Sign Up With Google</span>
           </button>
         </div>
-        <div className="mt-6 text-center"></div>
       </div>
     </div>
   );
