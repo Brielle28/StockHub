@@ -66,6 +66,10 @@ const routing = createBrowserRouter([
       },
     ],
   },
+  {
+    path: "*",
+    element: <ErrorPage />,
+  },
 ]);
 
 const AppRouter = () => {

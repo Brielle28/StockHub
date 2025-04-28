@@ -202,3 +202,6 @@ C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\obj\Debug\net9.0\refi
 C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\obj\Debug\net9.0\StockHub_Backend.pdb
 C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\obj\Debug\net9.0\StockHub_Backend.genruntimeconfig.cache
 C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\obj\Debug\net9.0\ref\StockHub_Backend.dll
+C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\BouncyCastle.Cryptography.dll
+C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\MailKit.dll
+C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\MimeKit.dll
