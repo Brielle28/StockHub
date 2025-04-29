@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using StockHub_Backend.Services.TokenServices;
 using Microsoft.OpenApi.Models;
+using StockHub_Backend.Services.EmailServices;
+using Microsoft.AspNetCore.DataProtection;
 var builder = WebApplication.CreateBuilder(args);
 
 // ✅ Add Swagger
@@ -60,17 +62,22 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<ICommentRepository, CommentRepository>();
 builder.Services.AddSingleton<IKafkaProducer, KafkaProducer>();
 
+//registerig email confirmation
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.AddScoped<IEmailService, EmailService>();
+
 // ✅ Register Controllers with Newtonsoft.Json
 builder.Services
     .AddControllers()
     .AddNewtonsoftJson(options =>
         options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
     );
+
 // ✅ Registering redis connection and the services as well 
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
     ConnectionMultiplexer.Connect(builder.Configuration["Redis:ConnectionString"]!)
 );
-builder.Services.AddSingleton<ICacheService, RedisCacheService>(); 
+builder.Services.AddSingleton<ICacheService, RedisCacheService>();
 // registering identity service 
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 {
@@ -79,29 +86,40 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
     options.Password.RequireUppercase = true;
     options.Password.RequireNonAlphanumeric = true;
     options.Password.RequiredLength = 12;
+    options.SignIn.RequireConfirmedEmail = true; // Require confirmed email
+    // options.User.RequireUniqueEmail = true; 
 })
-.AddEntityFrameworkStores<ApplicationDBContext>();
+.AddEntityFrameworkStores<ApplicationDBContext>()
+.AddDefaultTokenProviders();
+
+builder.Services.AddDataProtection()
+    .SetApplicationName("StockHub")
+    .PersistKeysToFileSystem(new DirectoryInfo(@"C:\Keys"));
+builder.Services.Configure<DataProtectionTokenProviderOptions>(opt =>
+    opt.TokenLifespan = TimeSpan.FromHours(24));
 
 //registering a scheme
-builder.Services.AddAuthentication(options => {
+builder.Services.AddAuthentication(options =>
+{
     options.DefaultAuthenticateScheme =
     options.DefaultChallengeScheme =
     options.DefaultForbidScheme =
     options.DefaultScheme =
     options.DefaultSignInScheme =
     options.DefaultSignOutScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer( options =>{
-      options.TokenValidationParameters = new TokenValidationParameters
+}).AddJwtBearer(options =>
 {
-    ValidateIssuer = true,
-    ValidIssuer = builder.Configuration["JWT:Issuer"],
-    ValidateAudience = true,
-     ValidAudience = builder.Configuration["JWT:Audience"],
-     ValidateIssuerSigningKey = true,
-      IssuerSigningKey = new SymmetricSecurityKey(
-            System.Text.Encoding.UTF8.GetBytes(builder.Configuration["JWT:SigningKey"])
-        )
-};
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidIssuer = builder.Configuration["JWT:Issuer"],
+        ValidateAudience = true,
+        ValidAudience = builder.Configuration["JWT:Audience"],
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(
+          System.Text.Encoding.UTF8.GetBytes(builder.Configuration["JWT:SigningKey"])
+      )
+    };
 });
 
 var app = builder.Build();
