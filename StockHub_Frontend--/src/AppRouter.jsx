@@ -12,6 +12,7 @@ import PortfolioPage from "./Components/Dashboard/PortfolioPage";
 import NewsPage from "./Components/Dashboard/NewsPage";
 import NotificationsPage from "./Components/Dashboard/NotificationsPage";
 import SettingsPage from "./Components/Dashboard/SettingsPage";
+import ErrorPage from "./Pages/ErrorPage";
 
 const routing = createBrowserRouter([
   {
@@ -68,7 +69,7 @@ const routing = createBrowserRouter([
   },
   {
     path: "*",
-    element: <ErrorPage />,
+    element: <ErrorPage/>,
   },
 ]);
 

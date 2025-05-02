@@ -1,0 +1,95 @@
+
+        // [HttpPost("login")]
+        // public async Task<IActionResult> Login(LoginDto login)
+        // {
+        //     if (!ModelState.IsValid)
+        //         return BadRequest(ModelState);
+
+        //     var user = await _userManager.Users.FirstOrDefaultAsync(x => x.UserName == login.userName.ToLower());
+
+        //     if (user == null)
+        //         return Unauthorized("Invalid username");
+
+        //     var result = await _signInManger.CheckPasswordSignInAsync(user, login.Password, false);
+
+        //     if (!result.Succeeded)
+        //         return Unauthorized("Username not found or Invalid password");
+
+        //     return Ok(new NewUserDto
+        //     {
+        //         UserName = user.UserName,
+        //         Email = user.Email,
+        //         Token = _tokenService.createToken(user)
+        //     });
+        // }
+
+        checking if email is verified 
+        // if (!await _userManager.IsEmailConfirmedAsync(user))
+// {
+//     return Unauthorized("Please confirm your email before logging in.");
+// }
+
+
+
+
+register with email verification
+  // [HttpPost("register")]
+        // public async Task<IActionResult> RegisterUser([FromBody] RegisterUserDto registerUserDto)
+        // {
+        //     try
+        //     {
+        //         if (!ModelState.IsValid)
+        //         {
+        //             return BadRequest(ModelState);
+        //         }
+
+        //         var appUser = new AppUser
+        //         {
+        //             UserName = registerUserDto.UserName,
+        //             FirstName = registerUserDto.FirstName,
+        //             LastName = registerUserDto.LastName,
+        //             Email = registerUserDto.Email
+        //         };
+
+        //         var createdUser = await _userManager.CreateAsync(appUser, registerUserDto.Password);
+
+        //         if (!createdUser.Succeeded)
+        //         {
+        //             return StatusCode(500, createdUser.Errors);
+        //         }
+
+        //         var roleResult = await _userManager.AddToRoleAsync(appUser, "User");
+        //         if (!roleResult.Succeeded)
+        //         {
+        //             return StatusCode(500, roleResult.Errors);
+        //         }
+
+        //         // ✅ Generate email confirmation token
+        //         var token = await _userManager.GenerateEmailConfirmationTokenAsync(appUser);
+
+        //         // ✅ Create confirmation link
+        //         var confirmationLink = Url.Action(
+        //             nameof(ConfirmEmail), // Action name
+        //             "User",               // Controller name
+        //             new { userId = appUser.Id, token = WebUtility.UrlEncode(token) },
+        //             Request.Scheme);      // e.g., https
+
+        //         // ✅ Send the email
+        //         await _emailService.SendEmailAsync(
+        //             appUser.Email,
+        //             "Confirm your email",
+        //             $"<p>Hello {appUser.FirstName},</p><p>Please confirm your email by clicking the link below:</p><p><a href='{confirmationLink}'>Confirm Email</a></p><p>This link expires in 24 hours.</p>");
+
+        //         // ✅ Return minimal response, let user know to check email
+        //         return Ok(new
+        //         {
+        //             Message = "User created successfully. Please check your email to confirm your account."
+        //         });
+        //     }
+        //     catch (Exception e)
+        //     {
+        //         return StatusCode(500, e.Message);
+        //     }
+        // }
+
+

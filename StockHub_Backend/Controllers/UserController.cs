@@ -44,15 +44,14 @@ namespace StockHub_Backend.Controllers
             if (user == null)
                 return Unauthorized("Invalid username");
 
-            if (!await _userManager.IsEmailConfirmedAsync(user))
-            {
-                return Unauthorized("Please confirm your email before logging in.");
-            }
+            // Check if email is confirmed
+            if (!user.EmailConfirmed)
+                return Unauthorized("Please confirm your email before logging in. Check your inbox for the confirmation link.");
 
             var result = await _signInManger.CheckPasswordSignInAsync(user, login.Password, false);
 
             if (!result.Succeeded)
-                return Unauthorized("Username not found or Invalid password");
+                return Unauthorized("Invalid password");
 
             return Ok(new NewUserDto
             {
@@ -62,56 +61,6 @@ namespace StockHub_Backend.Controllers
             });
         }
 
-
-        // [HttpPost("register")]
-        // public async Task<IActionResult> RegisterUser([FromBody] RegisterUserDto registerUserDto)
-        // {
-        //     try
-        //     {
-        //         if (!ModelState.IsValid)
-        //         {
-        //             return BadRequest(ModelState);
-        //         }
-        //         var AppUser = new AppUser
-        //         {
-        //             UserName = registerUserDto.UserName,
-        //             FirstName = registerUserDto.FirstName,
-        //             LastName = registerUserDto.LastName,
-        //             Email = registerUserDto.Email,
-
-        //         };
-
-        //         var createdUser = await _userManager.CreateAsync(AppUser, registerUserDto.Password);
-
-        //         if (createdUser.Succeeded)
-        //         {
-        //             var roleResult = await _userManager.AddToRoleAsync(AppUser, "User");
-        //             if (roleResult.Succeeded)
-        //             {
-        //                 return Ok(
-        //                     new NewUserDto
-        //                     {
-        //                         UserName = AppUser.UserName,
-        //                         Email = AppUser.Email,
-        //                         Token = _tokenService.createToken(AppUser)
-        //                     }
-        //                 );
-        //             }
-        //             else
-        //             {
-        //                 return StatusCode(500, roleResult.Errors);
-        //             }
-        //         }
-        //         else
-        //         {
-        //             return StatusCode(500, createdUser.Errors);
-        //         }
-        //     }
-        //     catch (Exception e)
-        //     {
-        //         return StatusCode(500, e);
-        //     }
-        // }
         [HttpPost("register")]
         public async Task<IActionResult> RegisterUser([FromBody] RegisterUserDto registerUserDto)
         {
@@ -122,66 +71,108 @@ namespace StockHub_Backend.Controllers
                     return BadRequest(ModelState);
                 }
 
-                var appUser = new AppUser
+                var AppUser = new AppUser
                 {
                     UserName = registerUserDto.UserName,
                     FirstName = registerUserDto.FirstName,
                     LastName = registerUserDto.LastName,
-                    Email = registerUserDto.Email
+                    Email = registerUserDto.Email,
                 };
 
-                var createdUser = await _userManager.CreateAsync(appUser, registerUserDto.Password);
+                var createdUser = await _userManager.CreateAsync(AppUser, registerUserDto.Password);
 
-                if (!createdUser.Succeeded)
+                if (createdUser.Succeeded)
+                {
+                    var roleResult = await _userManager.AddToRoleAsync(AppUser, "User");
+                    if (roleResult.Succeeded)
+                    {
+                        // Generate email confirmation token
+                        var token = await _userManager.GenerateEmailConfirmationTokenAsync(AppUser);
+
+                        // Create confirmation link
+                        var confirmationLink = Url.Action("ConfirmEmail", "User",
+                            new { userId = AppUser.Id, token = WebUtility.UrlEncode(token) },
+                            Request.Scheme);
+
+                        // Send confirmation email
+                        await _emailService.SendEmailAsync(
+                            AppUser.Email,
+                            "Confirm your StockHub account",
+                            $"Please confirm your account by clicking this link: <a href='{confirmationLink}'>Confirm Email</a>");
+
+                        return Ok(new
+                        {
+                            Message = "User created successfully! Please check your email to confirm your account.",
+                            UserName = AppUser.UserName,
+                            Email = AppUser.Email
+                        });
+                    }
+                    else
+                    {
+                        return StatusCode(500, roleResult.Errors);
+                    }
+                }
+                else
                 {
                     return StatusCode(500, createdUser.Errors);
                 }
-
-                var roleResult = await _userManager.AddToRoleAsync(appUser, "User");
-                if (!roleResult.Succeeded)
-                {
-                    return StatusCode(500, roleResult.Errors);
-                }
-
-                // ✅ Generate email confirmation token
-                var token = await _userManager.GenerateEmailConfirmationTokenAsync(appUser);
-
-                // ✅ Create confirmation link
-                var confirmationLink = Url.Action(
-                    nameof(ConfirmEmail), // Action name
-                    "User",               // Controller name
-                    new { userId = appUser.Id, token = WebUtility.UrlEncode(token) },
-                    Request.Scheme);      // e.g., https
-
-                // ✅ Send the email
-                await _emailService.SendEmailAsync(
-                    appUser.Email,
-                    "Confirm your email",
-                    $"<p>Hello {appUser.FirstName},</p><p>Please confirm your email by clicking the link below:</p><p><a href='{confirmationLink}'>Confirm Email</a></p><p>This link expires in 24 hours.</p>");
-
-                // ✅ Return minimal response, let user know to check email
-                return Ok(new
-                {
-                    Message = "User created successfully. Please check your email to confirm your account."
-                });
             }
             catch (Exception e)
             {
-                return StatusCode(500, e.Message);
+                return StatusCode(500, e);
             }
         }
 
         [HttpGet("confirmemail")]
         public async Task<IActionResult> ConfirmEmail(string userId, string token)
         {
+            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(token))
+                return BadRequest("Invalid email confirmation link");
+
             var user = await _userManager.FindByIdAsync(userId);
-            if (user == null) return BadRequest("Invalid user");
+            if (user == null)
+                return BadRequest("User not found");
+
+            // Decode the token (it was URL-encoded when we created the link)
+            token = WebUtility.UrlDecode(token);
 
             var result = await _userManager.ConfirmEmailAsync(user, token);
             if (result.Succeeded)
-                return Ok("Email confirmed successfully. You can now log in.");
+            {
+                // For API, you might want to redirect to a frontend page instead
+                // return Redirect("https://your-frontend-app.com/email-confirmed");
 
-            return BadRequest("Email confirmation failed.");
+                return Ok("Email confirmed successfully. You can now log in.");
+            }
+
+            return BadRequest("Email confirmation failed. The link may be invalid or expired.");
+        }
+
+        [HttpPost("resend-confirmation-email")]
+        public async Task<IActionResult> ResendConfirmationEmail(string email)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+                return BadRequest("User not found");
+
+            if (user.EmailConfirmed)
+                return BadRequest("Email is already confirmed");
+
+            // Generate email confirmation token
+            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+
+            // Create confirmation link
+            var confirmationLink = Url.Action("ConfirmEmail", "User",
+                new { userId = user.Id, token = WebUtility.UrlEncode(token) },
+                Request.Scheme);
+
+            // Send confirmation email
+            await _emailService.SendEmailAsync(
+                user.Email,
+                "Confirm your StockHub account",
+                $"Please confirm your account by clicking this link: <a href='{confirmationLink}'>Confirm Email</a>");
+
+            return Ok("Confirmation email has been resent. Please check your inbox.");
         }
 
     }

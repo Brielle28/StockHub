@@ -13,5 +13,6 @@ namespace StockHub_Backend.Models
         public string SenderEmail { get; set; }
         public string Username { get; set; }
         public string Password { get; set; }
+        public bool UseSsl { get; set; }
     }
 }

@@ -7,6 +7,6 @@ namespace StockHub_Backend.Services.EmailServices
 {
     public interface IEmailService
     {
-        Task SendEmailAsync(string toEmail, string subject, string htmlMessage);
+        Task SendEmailAsync(string to, string subject, string body);
     }
 }
