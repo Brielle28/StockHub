@@ -16,6 +16,14 @@ namespace StockHub_Backend.Repository
         {
             _applicationDBContext = applicationDBContext;
         }
+
+        public async Task<Portfolio> CreateAsync(Portfolio portfolio)
+        {
+            await _applicationDBContext.portfolios.AddAsync(portfolio);
+            await _applicationDBContext.SaveChangesAsync();
+            return  portfolio; 
+        }
+
         public async Task<List<Stock>> GetUserPortfolio(AppUser user)
         {
             return await _applicationDBContext.portfolios.Where(u => u.AppUserId == user.Id)
@@ -31,5 +39,6 @@ namespace StockHub_Backend.Repository
 
             }).ToListAsync();
         }
+        
     }
 }

@@ -70,5 +70,10 @@ namespace StockHub_Backend.Repository
         {
             return _context.Stock.AnyAsync(s => s.Id == Id);
         }
+
+        public async Task<Stock?> GetBySymbolAsync(string symbol)
+        {
+           return await _context.Stock.FirstOrDefaultAsync(s=>s.Symbol == symbol);
+        }
     }
 }

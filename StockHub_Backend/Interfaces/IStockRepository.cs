@@ -9,6 +9,7 @@ namespace StockHub_Backend.Interfaces
     {
         Task<List<Stock>> GetAllAsync();
         Task<Stock?> GetByIdAsync(int id);
+        Task<Stock?> GetBySymbolAsync (string symbol);
         Task<Stock> CreateAsync(Stock stockModel);
         Task<bool> UpdateAsync(int id, StockUpdateDto updateStock);
         Task<bool> DeleteAsync(int id);
