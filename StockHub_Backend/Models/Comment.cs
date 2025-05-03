@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace StockHub_Backend.Models
 {
+    [Table ("Comment")]
     public class Comment
     {
         public int? StockId { get; set; }

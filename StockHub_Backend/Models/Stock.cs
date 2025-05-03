@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace StockHub_Backend.Models
 {
+    [Table("Stock")]
     public class Stock
     {
         public int Id { get; set; }
@@ -18,7 +19,10 @@ namespace StockHub_Backend.Models
 
         public string Industry { get; set; } = string.Empty;
         public long MarketCap { get; set; }
-        
+
         public List<Comment> Comments { get; set; } = new List<Comment>();
+
+        public List<Portfolio> Portfolios { get; set; } = new List<Portfolio>();
+
     }
 }
