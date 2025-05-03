@@ -9,7 +9,7 @@ using StockHub_Backend.Models;
 
 namespace StockHub_Backend.Controllers
 {
-    [Route("api/stocks")]
+    [Route("StockHub/stocks")]
     [ApiController]
     public class StockController : ControllerBase
     {

@@ -45,8 +45,8 @@ namespace StockHub_Backend.Controllers
                 return Unauthorized("Invalid username");
 
             // Check if email is confirmed
-            if (!user.EmailConfirmed)
-                return Unauthorized("Please confirm your email before logging in. Check your inbox for the confirmation link.");
+            // if (!user.EmailConfirmed)
+            //     return Unauthorized("Please confirm your email before logging in. Check your inbox for the confirmation link.");
 
             var result = await _signInManger.CheckPasswordSignInAsync(user, login.Password, false);
 

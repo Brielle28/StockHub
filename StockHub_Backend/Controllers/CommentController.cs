@@ -9,7 +9,7 @@ using StockHub_Backend.Models;
 
 namespace StockHub_Backend.Controllers
 {
-    [Route("api/comment")]
+    [Route("StockHub/comment")]
     [ApiController]
     public class CommentController : ControllerBase
     {
