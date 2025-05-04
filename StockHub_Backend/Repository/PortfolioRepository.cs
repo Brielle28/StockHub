@@ -24,6 +24,19 @@ namespace StockHub_Backend.Repository
             return  portfolio; 
         }
 
+        public async Task<Portfolio> DeletePortfolio(AppUser appUser, string symbol)
+        {
+            var portfolio = await _applicationDBContext.portfolios.FirstOrDefaultAsync(x => x.AppUserId == appUser.Id && x.Stock.Symbol.ToLower() == symbol.ToLower());
+             if (portfolio == null)
+             {
+                return null;
+             }
+
+             _applicationDBContext.portfolios.Remove(portfolio);
+             await _applicationDBContext.SaveChangesAsync();
+             return portfolio ;
+        }
+
         public async Task<List<Stock>> GetUserPortfolio(AppUser user)
         {
             return await _applicationDBContext.portfolios.Where(u => u.AppUserId == user.Id)

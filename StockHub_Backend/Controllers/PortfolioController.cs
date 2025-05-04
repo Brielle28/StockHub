@@ -70,5 +70,27 @@ namespace StockHub_Backend.Controllers
             }
         }
 
+        [HttpDelete]
+        [Authorize]
+        public async Task<IActionResult> CreatePortfolio(string symbol)
+        {
+            var username = User.GetUsername();
+            var appUser = await _userManager.FindByNameAsync(username);
+
+            var UserPortfolio = await _portfolioRepository.GetUserPortfolio(appUser);
+            var FilteredStock = UserPortfolio.Where(s => s.Symbol.ToLower() == symbol.ToLower()).ToList();
+
+            if (FilteredStock.Count() == 1)
+            {
+                await _portfolioRepository.DeletePortfolio(appUser, symbol);
+            }
+            else
+            {
+                return BadRequest("Stock not found in the portfolio");
+            };
+
+            return Ok();
+        }
+
     }
 }
