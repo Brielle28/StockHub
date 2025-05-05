@@ -72,7 +72,7 @@ namespace StockHub_Backend.Controllers
 
         [HttpDelete]
         [Authorize]
-        public async Task<IActionResult> CreatePortfolio(string symbol)
+        public async Task<IActionResult> DeletePortfolio(string symbol)
         {
             var username = User.GetUsername();
             var appUser = await _userManager.FindByNameAsync(username);

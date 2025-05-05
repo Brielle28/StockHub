@@ -4,7 +4,7 @@ import DashboardHome from "../Components/Dashboard/DashboardHome";
 import MarketPage from "../Components/Dashboard/MarketPage";
 import NewsPage from "../Components/Dashboard/NewsPage";
 import NotificationsPage from "../Components/Dashboard/NotificationsPage";
-import PortfolioPage from "../Components/Dashboard/PortfolioPage";
+// import PortfolioPage from "../Components/Dashboard/PortfolioPage";
 import SettingsPage from "../Components/Dashboard/SettingsPage";
 import Sidebar from "../Components/Dashboard/Sidebar";
 import Navbar from "../Components/Dashboard/Navbar";
