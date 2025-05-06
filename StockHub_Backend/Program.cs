@@ -14,6 +14,8 @@ using StockHub_Backend.Services.TokenServices;
 using Microsoft.OpenApi.Models;
 using StockHub_Backend.Services.EmailServices;
 using Microsoft.AspNetCore.DataProtection;
+using StockHub_Backend.Repositories;
+using Microsoft.Extensions.Caching.StackExchangeRedis;
 var builder = WebApplication.CreateBuilder(args);
 
 // ✅ Add Swagger
@@ -62,6 +64,9 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IPortfolioRepository, PortfolioRepository>();
 builder.Services.AddScoped<ICommentRepository, CommentRepository>();
 builder.Services.AddSingleton<IKafkaProducer, KafkaProducer>();
+builder.Services.AddSingleton<ICacheService, RedisCacheService>();
+builder.Services.AddSingleton<IEventPublisher, KafkaEventPublisher>();
+
 
 //registerig email confirmation
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
@@ -123,6 +128,22 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// builder.Services.AddCors(options =>
+// {
+//     options.AddPolicy("CorsPolicy", policy =>
+//     {
+//         policy.AllowAnyHeader()
+//             .AllowAnyMethod()
+//             .WithOrigins("http://localhost:3000"); // Replace with your frontend URL
+//     });
+// });
+
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration["Redis:ConnectionString"];
+    options.InstanceName = builder.Configuration["Redis:InstanceName"];
+});
+
 var app = builder.Build();
 
 // ✅ Enable Swagger only in Development
@@ -133,6 +154,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("CorsPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 

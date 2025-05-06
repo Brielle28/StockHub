@@ -1,34 +1,85 @@
-using StackExchange.Redis;
 using System;
+using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
+using StockHub_Backend.Interfaces;
 
 namespace StockHub_Backend.Services
 {
     public class RedisCacheService : ICacheService
     {
-        private readonly IConnectionMultiplexer _redis;
+        private readonly IDistributedCache _distributedCache;
+        private readonly ILogger<RedisCacheService> _logger;
 
-        public RedisCacheService(IConnectionMultiplexer redis)
+        public RedisCacheService(IDistributedCache distributedCache, ILogger<RedisCacheService> logger)
         {
-            _redis = redis;
+            _distributedCache = distributedCache;
+            _logger = logger;
         }
 
-        public async Task SetAsync(string key, string value, TimeSpan? expiry = null)
+        public async Task<T> GetAsync<T>(string key)
         {
-            var db = _redis.GetDatabase(); // Get database dynamically
-            await db.StringSetAsync(key, value, expiry);
+            try
+            {
+                var cachedData = await _distributedCache.GetStringAsync(key);
+
+                if (string.IsNullOrEmpty(cachedData))
+                {
+                    return default;
+                }
+
+                return JsonSerializer.Deserialize<T>(cachedData);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving data from Redis cache for key: {Key}", key);
+                return default;
+            }
         }
 
-        public async Task<string?> GetAsync(string key)
+        public async Task SetAsync<T>(string key, T value, int expirationMinutes = 30)
         {
-            var db = _redis.GetDatabase();
-            return await db.StringGetAsync(key);
+            try
+            {
+                var options = new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(expirationMinutes)
+                };
+
+                var serializedData = JsonSerializer.Serialize(value);
+                await _distributedCache.SetStringAsync(key, serializedData, options);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting data in Redis cache for key: {Key}", key);
+            }
         }
 
         public async Task RemoveAsync(string key)
         {
-            var db = _redis.GetDatabase();
-            await db.KeyDeleteAsync(key);
+            try
+            {
+                await _distributedCache.RemoveAsync(key);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error removing data from Redis cache for key: {Key}", key);
+            }
+        }
+
+        public async Task<bool> ExistsAsync(string key)
+        {
+            try
+            {
+                var cachedData = await _distributedCache.GetStringAsync(key);
+                return !string.IsNullOrEmpty(cachedData);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking existence in Redis cache for key: {Key}", key);
+                return false;
+            }
         }
     }
 }

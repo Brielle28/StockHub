@@ -44,7 +44,7 @@ namespace StockHub_Backend.Controllers
         [HttpPost("{stockId}")]
         public async Task<IActionResult> Create([FromRoute] int stockId, [FromBody] CreateCommentDto commentDto)
         {
-            if (!await _stockRepository.stockExist(stockId))
+            if (!await _stockRepository.stockExists(stockId))
             {
                 return BadRequest("Stock not found.");
             }

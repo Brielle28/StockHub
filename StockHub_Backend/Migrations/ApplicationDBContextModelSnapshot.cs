@@ -275,17 +275,70 @@ namespace StockHub_Backend.Migrations
 
             modelBuilder.Entity("StockHub_Backend.Models.Portfolio", b =>
                 {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
                     b.Property<string>("AppUserId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppUserId");
+
+                    b.ToTable("Portfolios");
+                });
+
+            modelBuilder.Entity("StockHub_Backend.Models.PortfolioStock", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("PortfolioId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("PurchaseDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("PurchasePrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("StockId")
                         .HasColumnType("int");
 
-                    b.HasKey("AppUserId", "StockId");
+                    b.HasKey("Id");
+
+                    b.HasIndex("PortfolioId");
 
                     b.HasIndex("StockId");
 
-                    b.ToTable("Portfolio");
+                    b.ToTable("PortfolioStocks");
                 });
 
             modelBuilder.Entity("StockHub_Backend.Models.Stock", b =>
@@ -300,6 +353,9 @@ namespace StockHub_Backend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<decimal>("CurrentPrice")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("Industry")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -307,8 +363,14 @@ namespace StockHub_Backend.Migrations
                     b.Property<decimal>("LastDiv")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<DateTime>("LastUpdated")
+                        .HasColumnType("datetime2");
+
                     b.Property<long>("MarketCap")
                         .HasColumnType("bigint");
+
+                    b.Property<decimal>("PreviousClose")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("Purchase")
                         .HasColumnType("decimal(18,2)");
@@ -390,13 +452,24 @@ namespace StockHub_Backend.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("AppUser");
+                });
+
+            modelBuilder.Entity("StockHub_Backend.Models.PortfolioStock", b =>
+                {
+                    b.HasOne("StockHub_Backend.Models.Portfolio", "Portfolio")
+                        .WithMany("PortfolioStocks")
+                        .HasForeignKey("PortfolioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("StockHub_Backend.Models.Stock", "Stock")
-                        .WithMany("Portfolios")
+                        .WithMany("PortfolioStocks")
                         .HasForeignKey("StockId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("AppUser");
+                    b.Navigation("Portfolio");
 
                     b.Navigation("Stock");
                 });
@@ -406,11 +479,16 @@ namespace StockHub_Backend.Migrations
                     b.Navigation("Portfolios");
                 });
 
+            modelBuilder.Entity("StockHub_Backend.Models.Portfolio", b =>
+                {
+                    b.Navigation("PortfolioStocks");
+                });
+
             modelBuilder.Entity("StockHub_Backend.Models.Stock", b =>
                 {
                     b.Navigation("Comments");
 
-                    b.Navigation("Portfolios");
+                    b.Navigation("PortfolioStocks");
                 });
 #pragma warning restore 612, 618
         }

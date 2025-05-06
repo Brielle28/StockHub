@@ -205,3 +205,4 @@ C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\obj\Debug\net9.0\ref\
 C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\BouncyCastle.Cryptography.dll
 C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\MailKit.dll
 C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\MimeKit.dll
+C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\Microsoft.Extensions.Caching.StackExchangeRedis.dll

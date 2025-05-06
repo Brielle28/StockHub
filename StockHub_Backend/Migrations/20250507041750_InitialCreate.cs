@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace StockHub_Backend.Migrations
 {
     /// <inheritdoc />
-    public partial class PortfolioManyToMany : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -64,8 +64,11 @@ namespace StockHub_Backend.Migrations
                     CompanyName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Purchase = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     LastDiv = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    CurrentPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    PreviousClose = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Industry = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    MarketCap = table.Column<long>(type: "bigint", nullable: false)
+                    MarketCap = table.Column<long>(type: "bigint", nullable: false),
+                    LastUpdated = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -179,6 +182,29 @@ namespace StockHub_Backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Portfolios",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    AppUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Portfolios", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Portfolios_AspNetUsers_AppUserId",
+                        column: x => x.AppUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Comment",
                 columns: table => new
                 {
@@ -200,23 +226,29 @@ namespace StockHub_Backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Portfolio",
+                name: "PortfolioStocks",
                 columns: table => new
                 {
-                    AppUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    StockId = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    PortfolioId = table.Column<int>(type: "int", nullable: false),
+                    StockId = table.Column<int>(type: "int", nullable: false),
+                    Quantity = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    PurchasePrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    PurchaseDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Portfolio", x => new { x.AppUserId, x.StockId });
+                    table.PrimaryKey("PK_PortfolioStocks", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Portfolio_AspNetUsers_AppUserId",
-                        column: x => x.AppUserId,
-                        principalTable: "AspNetUsers",
+                        name: "FK_PortfolioStocks_Portfolios_PortfolioId",
+                        column: x => x.PortfolioId,
+                        principalTable: "Portfolios",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Portfolio_Stock_StockId",
+                        name: "FK_PortfolioStocks_Stock_StockId",
                         column: x => x.StockId,
                         principalTable: "Stock",
                         principalColumn: "Id",
@@ -277,8 +309,18 @@ namespace StockHub_Backend.Migrations
                 column: "StockId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Portfolio_StockId",
-                table: "Portfolio",
+                name: "IX_Portfolios_AppUserId",
+                table: "Portfolios",
+                column: "AppUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PortfolioStocks_PortfolioId",
+                table: "PortfolioStocks",
+                column: "PortfolioId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PortfolioStocks_StockId",
+                table: "PortfolioStocks",
                 column: "StockId");
         }
 
@@ -304,16 +346,19 @@ namespace StockHub_Backend.Migrations
                 name: "Comment");
 
             migrationBuilder.DropTable(
-                name: "Portfolio");
+                name: "PortfolioStocks");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
-                name: "AspNetUsers");
+                name: "Portfolios");
 
             migrationBuilder.DropTable(
                 name: "Stock");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUsers");
         }
     }
 }

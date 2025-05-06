@@ -1,96 +1,351 @@
+// using System;
+// using System.Collections.Generic;
+// using System.Linq;
+// using System.Threading.Tasks;
+// using Microsoft.AspNetCore.Authorization;
+// using Microsoft.AspNetCore.Identity;
+// using Microsoft.AspNetCore.Mvc;
+// using StockHub_Backend.Extensions;
+// using StockHub_Backend.Interfaces;
+// using StockHub_Backend.Models;
+
+// namespace StockHub_Backend.Controllers
+// {
+//     [Route("StockHub/Portfolio")]
+//     [ApiController]
+//     public class PortfolioController : ControllerBase
+//     {
+//         private readonly UserManager<AppUser> _userManager;
+//         private readonly IStockRepository _stockRepository;
+//         private readonly IPortfolioRepository _portfolioRepository;
+//         public PortfolioController(UserManager<AppUser> userManager, IStockRepository stockRepository, IPortfolioRepository portfolioRepository)
+//         {
+//             _stockRepository = stockRepository;
+//             _userManager = userManager;
+//             _portfolioRepository = portfolioRepository;
+//         }
+
+//         [HttpGet]
+//         [Authorize]
+//         public async Task<IActionResult> GetUserPortfolio()
+//         {
+//             var username = User.GetUsername();
+//             var appUser = await _userManager.FindByNameAsync(username);
+//             var UserPortfolio = await _portfolioRepository.GetUserPortfolio(appUser);
+//             return Ok(UserPortfolio);
+//         }
+
+//         [HttpPost]
+//         [Authorize]
+//         public async Task<IActionResult> AddPortfolio(string symbol)
+//         {
+//             var username = User.GetUsername();
+//             var appUser = await _userManager.FindByNameAsync(username);
+//             var stock = await _stockRepository.GetBySymbolAsync(symbol);
+
+//             if (stock == null)
+//             {
+//                 return NotFound("Stock not found");
+//             }
+
+//             var UserPortfolio = await _portfolioRepository.GetUserPortfolio(appUser);
+
+//             if (UserPortfolio.Any(e => e.Symbol.ToLower() == symbol.ToLower())) return BadRequest("this stock exist: cannot add existing symbol");
+
+//             var portfolio = new Portfolio
+//             {
+//                 AppUserId = appUser.Id,
+//                 StockId = stock.Id
+//             };
+
+//             await _portfolioRepository.CreateAsync(portfolio);
+//             if (portfolio == null)
+//             {
+//                 return StatusCode(500, "could not create portfolio");
+//             }
+//             else
+//             {
+//                 return Created();
+
+//             }
+//         }
+
+//         [HttpDelete]
+//         [Authorize]
+//         public async Task<IActionResult> DeletePortfolio(string symbol)
+//         {
+//             var username = User.GetUsername();
+//             var appUser = await _userManager.FindByNameAsync(username);
+
+//             var UserPortfolio = await _portfolioRepository.GetUserPortfolio(appUser);
+//             var FilteredStock = UserPortfolio.Where(s => s.Symbol.ToLower() == symbol.ToLower()).ToList();
+
+//             if (FilteredStock.Count() == 1)
+//             {
+//                 await _portfolioRepository.DeletePortfolio(appUser, symbol);
+//             }
+//             else
+//             {
+//                 return BadRequest("Stock not found in the portfolio");
+//             };
+
+//             return Ok();
+//         }
+
+//     }
+// }
+
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using StockHub_Backend.Dtos.Portfolio;
+using StockHub_Backend.DTOs;
 using StockHub_Backend.Extensions;
 using StockHub_Backend.Interfaces;
 using StockHub_Backend.Models;
 
 namespace StockHub_Backend.Controllers
 {
-    [Route("StockHub/Portfolio")]
+    [Route("api/portfolios")]
     [ApiController]
-    public class PortfolioController : ControllerBase
+    [Authorize]
+    public class PortfoliosController : ControllerBase
     {
         private readonly UserManager<AppUser> _userManager;
         private readonly IStockRepository _stockRepository;
         private readonly IPortfolioRepository _portfolioRepository;
-        public PortfolioController(UserManager<AppUser> userManager, IStockRepository stockRepository, IPortfolioRepository portfolioRepository)
+
+        public PortfoliosController(
+            UserManager<AppUser> userManager, 
+            IStockRepository stockRepository, 
+            IPortfolioRepository portfolioRepository)
         {
-            _stockRepository = stockRepository;
             _userManager = userManager;
+            _stockRepository = stockRepository;
             _portfolioRepository = portfolioRepository;
         }
 
+        // GET: api/portfolios
         [HttpGet]
-        [Authorize]
+        public async Task<IActionResult> GetUserPortfolios()
+        {
+            var username = User.GetUsername();
+            var user = await _userManager.FindByNameAsync(username);
+            
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+            
+            var portfolios = await _portfolioRepository.GetUserPortfolios(user);
+            return Ok(portfolios);
+        }
+
+        // GET: api/portfolios/{id}
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetPortfolio(int id)
+        {
+            var username = User.GetUsername();
+            var user = await _userManager.FindByNameAsync(username);
+            
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            var portfolio = await _portfolioRepository.GetPortfolioById(id, user.Id);
+            
+            if (portfolio == null)
+            {
+                return NotFound("Portfolio not found");
+            }
+            
+            return Ok(portfolio);
+        }
+
+        // POST: api/portfolios
+        [HttpPost]
+        public async Task<IActionResult> CreatePortfolio(CreatePortfolioDto portfolioDto)
+        {
+            var username = User.GetUsername();
+            var user = await _userManager.FindByNameAsync(username);
+            
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            var portfolio = new Portfolio
+            {
+                Name = portfolioDto.Name,
+                Description = portfolioDto.Description,
+                AppUserId = user.Id,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            var createdPortfolio = await _portfolioRepository.CreatePortfolio(portfolio);
+            
+            if (createdPortfolio == null)
+            {
+                return StatusCode(500, "Failed to create portfolio");
+            }
+            
+            return CreatedAtAction(nameof(GetPortfolio), new { id = createdPortfolio.Id }, null);
+        }
+
+        // PUT: api/portfolios/{id}
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdatePortfolio(int id, UpdatePortfolioDto portfolioDto)
+        {
+            var username = User.GetUsername();
+            var user = await _userManager.FindByNameAsync(username);
+            
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            var portfolio = await _portfolioRepository.GetPortfolioById(id, user.Id);
+            
+            if (portfolio == null)
+            {
+                return NotFound("Portfolio not found");
+            }
+
+            // Get the entity from the database to update
+            var portfolioToUpdate = new Portfolio
+            {
+                Id = id,
+                Name = portfolioDto.Name,
+                Description = portfolioDto.Description,
+                AppUserId = user.Id
+                // UpdatedAt will be set in the repository
+            };
+
+            var result = await _portfolioRepository.UpdatePortfolio(portfolioToUpdate);
+            
+            if (!result)
+            {
+                return StatusCode(500, "Failed to update portfolio");
+            }
+            
+            return NoContent();
+        }
+
+        // DELETE: api/portfolios/{id}
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeletePortfolio(int id)
+        {
+            var username = User.GetUsername();
+            var user = await _userManager.FindByNameAsync(username);
+            
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            var result = await _portfolioRepository.DeletePortfolio(id, user.Id);
+            
+            if (!result)
+            {
+                return NotFound("Portfolio not found");
+            }
+            
+            return NoContent();
+        }
+
+        // POST: api/portfolios/{id}/stocks
+        [HttpPost("{id}/stocks")]
+        public async Task<IActionResult> AddStockToPortfolio(int id, AddStockToPortfolioDto stockDto)
+        {
+            var username = User.GetUsername();
+            var user = await _userManager.FindByNameAsync(username);
+            
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            // Check if portfolio exists and belongs to the user
+            if (!await _portfolioRepository.UserOwnsPortfolio(id, user.Id))
+            {
+                return NotFound("Portfolio not found");
+            }
+
+            // Check if stock exists
+            var stockExists = await _stockRepository.StockExists(stockDto.Symbol);
+            
+            if (!stockExists)
+            {
+                return NotFound($"Stock with symbol {stockDto.Symbol} not found");
+            }
+
+            var addedStock = await _portfolioRepository.AddStockToPortfolio(id, stockDto, user);
+            
+            if (addedStock == null)
+            {
+                return StatusCode(500, "Failed to add stock to portfolio");
+            }
+            
+            return CreatedAtAction(nameof(GetPortfolio), new { id }, addedStock);
+        }
+
+        // DELETE: api/portfolios/{id}/stocks/{stockId}
+        [HttpDelete("{id}/stocks/{stockId}")]
+        public async Task<IActionResult> RemoveStockFromPortfolio(int id, int stockId)
+        {
+            var username = User.GetUsername();
+            var user = await _userManager.FindByNameAsync(username);
+            
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            var result = await _portfolioRepository.RemoveStockFromPortfolio(id, stockId, user.Id);
+            
+            if (!result)
+            {
+                return NotFound("Stock not found in portfolio");
+            }
+            
+            return NoContent();
+        }
+
+        // GET: api/portfolios/{id}/stocks
+        [HttpGet("{id}/stocks")]
+        public async Task<IActionResult> GetPortfolioStocks(int id)
+        {
+            var username = User.GetUsername();
+            var user = await _userManager.FindByNameAsync(username);
+            
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            // Check if portfolio exists and belongs to the user
+            if (!await _portfolioRepository.UserOwnsPortfolio(id, user.Id))
+            {
+                return NotFound("Portfolio not found");
+            }
+
+            var stocks = await _portfolioRepository.GetPortfolioStocks(id, user.Id);
+            return Ok(stocks);
+        }
+
+        // Legacy endpoints for backward compatibility
+        [HttpGet("legacy")]
         public async Task<IActionResult> GetUserPortfolio()
         {
             var username = User.GetUsername();
             var appUser = await _userManager.FindByNameAsync(username);
-            var UserPortfolio = await _portfolioRepository.GetUserPortfolio(appUser);
-            return Ok(UserPortfolio);
+            var userPortfolio = await _portfolioRepository.GetUserPortfolio(appUser);
+            return Ok(userPortfolio);
         }
-
-        [HttpPost]
-        [Authorize]
-        public async Task<IActionResult> AddPortfolio(string symbol)
-        {
-            var username = User.GetUsername();
-            var appUser = await _userManager.FindByNameAsync(username);
-            var stock = await _stockRepository.GetBySymbolAsync(symbol);
-
-            if (stock == null)
-            {
-                return NotFound("Stock not found");
-            }
-
-            var UserPortfolio = await _portfolioRepository.GetUserPortfolio(appUser);
-
-            if (UserPortfolio.Any(e => e.Symbol.ToLower() == symbol.ToLower())) return BadRequest("this stock exist: cannot add existing symbol");
-
-            var portfolio = new Portfolio
-            {
-                AppUserId = appUser.Id,
-                StockId = stock.Id
-            };
-
-            await _portfolioRepository.CreateAsync(portfolio);
-            if (portfolio == null)
-            {
-                return StatusCode(500, "could not create portfolio");
-            }
-            else
-            {
-                return Created();
-
-            }
-        }
-
-        [HttpDelete]
-        [Authorize]
-        public async Task<IActionResult> DeletePortfolio(string symbol)
-        {
-            var username = User.GetUsername();
-            var appUser = await _userManager.FindByNameAsync(username);
-
-            var UserPortfolio = await _portfolioRepository.GetUserPortfolio(appUser);
-            var FilteredStock = UserPortfolio.Where(s => s.Symbol.ToLower() == symbol.ToLower()).ToList();
-
-            if (FilteredStock.Count() == 1)
-            {
-                await _portfolioRepository.DeletePortfolio(appUser, symbol);
-            }
-            else
-            {
-                return BadRequest("Stock not found in the portfolio");
-            };
-
-            return Ok();
-        }
-
     }
 }
