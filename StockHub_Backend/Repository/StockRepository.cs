@@ -334,10 +334,10 @@ namespace StockHub_Backend.Repository
             return true;
         }
 
-        public Task<bool> StockExists(int id)
-        {
-            return _context.Stock.AnyAsync(s => s.Id == id);
-        }
+        // public Task<bool> StockExists(int id)
+        // {
+        //     return _context.Stock.AnyAsync(s => s.Id == id);
+        // }
 
         public async Task<Stock?> GetBySymbolAsync(string symbol)
         {
