@@ -25,7 +25,7 @@ const Login = () => {
           <MdWavingHand className="text-3xl sm:text-4xl ml-3 animate-pulse" />
         </div>
         <p className="text-gray-300 text-sm sm:text-base">
-          To keep connected with our platform, please login with your personal info
+          To keep connected with our platform, please login
         </p>
       </div>
 
