@@ -1,0 +1,155 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+using StockHub_Backend.Models;
+using StockHub_Backend.Dtos.StockData;
+
+namespace StockHub_Backend.Mappers
+{
+    public static class StockMappingExtensions
+    {
+        public static StockQuoteDto ToDto(this StockQuote stockQuote)
+        {
+            return new StockQuoteDto
+            {
+                Symbol = stockQuote.Symbol,
+                CompanyName = stockQuote.CompanyName,
+                CurrentPrice = stockQuote.CurrentPrice,
+                Change = stockQuote.Change,
+                ChangePercent = stockQuote.ChangePercent,
+                LastUpdated = stockQuote.LastUpdated,
+                Currency = stockQuote.Currency,
+                Volume = stockQuote.Volume,
+                DayHigh = stockQuote.DayHigh,
+                DayLow = stockQuote.DayLow,
+                Open = stockQuote.Open,
+                PreviousClose = stockQuote.PreviousClose,
+                MarketCap = stockQuote.MarketCap,
+                PeRatio = stockQuote.PeRatio
+            };
+        }
+
+        public static StockHistoryDto ToDto(this StockHistory stockHistory)
+        {
+            return new StockHistoryDto
+            {
+                Symbol = stockHistory.Symbol,
+                Range = stockHistory.Range,
+                DataPoints = stockHistory.DataPoints.Select(dp => dp.ToDto()).ToList()
+            };
+        }
+
+        public static StockDataPointDto ToDto(this StockDataPoint dataPoint)
+        {
+            return new StockDataPointDto
+            {
+                Date = dataPoint.Date,
+                Open = dataPoint.Open,
+                High = dataPoint.High,
+                Low = dataPoint.Low,
+                Close = dataPoint.Close,
+                AdjustedClose = dataPoint.AdjustedClose,
+                Volume = dataPoint.Volume
+            };
+        }
+
+        public static StockNewsDto ToDto(this StockNews stockNews)
+        {
+            return new StockNewsDto
+            {
+                Title = stockNews.Title,
+                Summary = stockNews.Summary,
+                Url = stockNews.Url,
+                Source = stockNews.Source,
+                PublishedAt = stockNews.PublishedAt,
+                ImageUrl = stockNews.ImageUrl,
+                RelatedSymbols = stockNews.RelatedSymbols
+            };
+        }
+
+        public static StockSearchResultDto ToDto(this StockSearchResult searchResult)
+        {
+            return new StockSearchResultDto
+            {
+                Symbol = searchResult.Symbol,
+                CompanyName = searchResult.CompanyName,
+                Exchange = searchResult.Exchange,
+                Type = searchResult.Type,
+                Region = searchResult.Region
+            };
+        }
+
+        public static StockQuote FromYahooQuote(this YahooQuoteResultDto yahooQuote)
+        {
+            return new StockQuote
+            {
+                Symbol = yahooQuote.Symbol,
+                CompanyName = yahooQuote.ShortName,
+                CurrentPrice = yahooQuote.RegularMarketPrice ?? 0,
+                Change = yahooQuote.RegularMarketChange ?? 0,
+                ChangePercent = yahooQuote.RegularMarketChangePercent ?? 0,
+                LastUpdated = yahooQuote.RegularMarketTime.HasValue 
+                    ? DateTimeOffset.FromUnixTimeSeconds(yahooQuote.RegularMarketTime.Value).DateTime 
+                    : DateTime.UtcNow,
+                Currency = yahooQuote.Currency,
+                Volume = yahooQuote.RegularMarketVolume ?? 0,
+                DayHigh = yahooQuote.RegularMarketDayHigh ?? 0,
+                DayLow = yahooQuote.RegularMarketDayLow ?? 0,
+                Open = yahooQuote.RegularMarketOpen ?? 0,
+                PreviousClose = yahooQuote.RegularMarketPreviousClose ?? 0,
+                MarketCap = yahooQuote.MarketCap ?? 0,
+                PeRatio = yahooQuote.TrailingPE ?? 0
+            };
+        }
+
+        public static KafkaStockMessage ToKafkaMessage(this StockQuote stockQuote)
+        {
+            return new KafkaStockMessage
+            {
+                Symbol = stockQuote.Symbol,
+                Price = stockQuote.CurrentPrice,
+                Change = stockQuote.Change,
+                ChangePercent = stockQuote.ChangePercent,
+                Timestamp = stockQuote.LastUpdated,
+                Volume = stockQuote.Volume
+            };
+        }
+
+        public static List<StockDataPoint> FromYahooHistory(this ChartResult chartResult)
+        {
+            var dataPoints = new List<StockDataPoint>();
+            
+            if (chartResult.Timestamp.Count == 0 || chartResult.Indicators.Quote.Count == 0)
+                return dataPoints;
+
+            var quotes = chartResult.Indicators.Quote[0];
+            var adjClose = chartResult.Indicators.Adjclose.Count > 0 
+                ? chartResult.Indicators.Adjclose[0].Adjclose 
+                : new List<decimal?>();
+
+            for (int i = 0; i < chartResult.Timestamp.Count; i++)
+            {
+                if (i >= quotes.Open.Count || i >= quotes.High.Count || 
+                    i >= quotes.Low.Count || i >= quotes.Close.Count || i >= quotes.Volume.Count)
+                    continue;
+
+                var dataPoint = new StockDataPoint
+                {
+                    Date = DateTimeOffset.FromUnixTimeSeconds(chartResult.Timestamp[i]).DateTime,
+                    Open = quotes.Open[i] ?? 0,
+                    High = quotes.High[i] ?? 0,
+                    Low = quotes.Low[i] ?? 0,
+                    Close = quotes.Close[i] ?? 0,
+                    Volume = quotes.Volume[i] ?? 0,
+                    AdjustedClose = i < adjClose.Count ? (adjClose[i] ?? quotes.Close[i] ?? 0) : (quotes.Close[i] ?? 0)
+                };
+
+                dataPoints.Add(dataPoint);
+            }
+
+            return dataPoints;
+        }
+    }
+}

@@ -206,3 +206,14 @@ C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\Boun
 C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\MailKit.dll
 C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\MimeKit.dll
 C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\Microsoft.Extensions.Caching.StackExchangeRedis.dll
+C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\Mailjet.Client.dll
+C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\Microsoft.Extensions.Configuration.dll
+C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\Microsoft.Extensions.Configuration.Binder.dll
+C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\Microsoft.Extensions.Diagnostics.dll
+C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\Microsoft.Extensions.Diagnostics.Abstractions.dll
+C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\Microsoft.Extensions.Http.dll
+C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\Microsoft.Extensions.Options.ConfigurationExtensions.dll
+C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\Polly.dll
+C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\Polly.Core.dll
+C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\Polly.Extensions.Http.dll
+C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\System.Net.WebSockets.WebSocketProtocol.dll

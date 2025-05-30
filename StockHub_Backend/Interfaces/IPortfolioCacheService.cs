@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace StockHub_Backend.Services
 {
-    public interface ICacheService
+    public interface IPortfolioCacheService
     {
         Task<T> GetAsync<T>(string key);
         Task SetAsync<T>(string key, T value, int expirationMinutes = 30);

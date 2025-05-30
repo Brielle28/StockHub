@@ -7,7 +7,7 @@ using StockHub_Backend.Interfaces;
 
 namespace StockHub_Backend.Services
 {
-    public class RedisCacheService : ICacheService
+    public class RedisCacheService : IPortfolioCacheService
     {
         private readonly IDistributedCache _distributedCache;
         private readonly ILogger<RedisCacheService> _logger;

@@ -16,13 +16,13 @@ namespace StockHub_Backend.Repositories
     public class PortfolioRepository : IPortfolioRepository
     {
         private readonly ApplicationDBContext _context;
-        private readonly ICacheService _cacheService;
+        private readonly IPortfolioCacheService _cacheService;
         private readonly IEventPublisher _eventPublisher;
         private readonly IStockRepository _stockRepository;
 
         public PortfolioRepository(
             ApplicationDBContext context, 
-            ICacheService cacheService, 
+            IPortfolioCacheService cacheService, 
             IEventPublisher eventPublisher,
             IStockRepository stockRepository)
         {

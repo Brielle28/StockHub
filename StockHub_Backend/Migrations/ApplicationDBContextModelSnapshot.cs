@@ -17,7 +17,7 @@ namespace StockHub_Backend.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.4")
+                .HasAnnotation("ProductVersion", "9.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -384,6 +384,228 @@ namespace StockHub_Backend.Migrations
                     b.ToTable("Stock");
                 });
 
+            modelBuilder.Entity("StockHub_Backend.Models.StockDataPoint", b =>
+                {
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("AdjustedClose")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("Close")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("High")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("Low")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("Open")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("StockHistoryRange")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("StockHistoryRange1")
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("StockHistorySymbol")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("StockHistorySymbol1")
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<long>("Volume")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Date");
+
+                    b.HasIndex("Date");
+
+                    b.HasIndex("StockHistorySymbol", "StockHistoryRange");
+
+                    b.HasIndex("StockHistorySymbol1", "StockHistoryRange1");
+
+                    b.ToTable("StockDataPoints");
+                });
+
+            modelBuilder.Entity("StockHub_Backend.Models.StockHistory", b =>
+                {
+                    b.Property<string>("Symbol")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("Range")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("RetrievedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Symbol", "Range");
+
+                    b.HasIndex("RetrievedAt");
+
+                    b.HasIndex("Symbol");
+
+                    b.ToTable("StockHistories");
+                });
+
+            modelBuilder.Entity("StockHub_Backend.Models.StockNews", b =>
+                {
+                    b.Property<string>("Url")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("PublishedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RelatedSymbols")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.HasKey("Url");
+
+                    b.HasIndex("PublishedAt");
+
+                    b.HasIndex("Source");
+
+                    b.ToTable("StockNews");
+                });
+
+            modelBuilder.Entity("StockHub_Backend.Models.StockQuote", b =>
+                {
+                    b.Property<string>("Symbol")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<decimal>("Change")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("ChangePercent")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("CompanyName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)")
+                        .HasDefaultValue("USD");
+
+                    b.Property<decimal>("CurrentPrice")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("DayHigh")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("DayLow")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<DateTime>("LastUpdated")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("MarketCap")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Open")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("PeRatio")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("PreviousClose")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<long>("Volume")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Symbol");
+
+                    b.HasIndex("LastUpdated");
+
+                    b.HasIndex("Symbol")
+                        .IsUnique();
+
+                    b.ToTable("StockQuotes");
+                });
+
+            modelBuilder.Entity("StockHub_Backend.Models.StockSearchResult", b =>
+                {
+                    b.Property<string>("Symbol")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("CompanyName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Exchange")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Region")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Symbol");
+
+                    b.HasIndex("CompanyName");
+
+                    b.HasIndex("Exchange");
+
+                    b.ToTable("StockSearchResults");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -474,6 +696,18 @@ namespace StockHub_Backend.Migrations
                     b.Navigation("Stock");
                 });
 
+            modelBuilder.Entity("StockHub_Backend.Models.StockDataPoint", b =>
+                {
+                    b.HasOne("StockHub_Backend.Models.StockHistory", null)
+                        .WithMany()
+                        .HasForeignKey("StockHistorySymbol", "StockHistoryRange")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("StockHub_Backend.Models.StockHistory", null)
+                        .WithMany("DataPoints")
+                        .HasForeignKey("StockHistorySymbol1", "StockHistoryRange1");
+                });
+
             modelBuilder.Entity("StockHub_Backend.Models.AppUser", b =>
                 {
                     b.Navigation("Portfolios");
@@ -489,6 +723,11 @@ namespace StockHub_Backend.Migrations
                     b.Navigation("Comments");
 
                     b.Navigation("PortfolioStocks");
+                });
+
+            modelBuilder.Entity("StockHub_Backend.Models.StockHistory", b =>
+                {
+                    b.Navigation("DataPoints");
                 });
 #pragma warning restore 612, 618
         }

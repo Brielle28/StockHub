@@ -252,11 +252,11 @@ namespace StockHub_Backend.Repository
     public class StockRepository : IStockRepository
     {
         private readonly ApplicationDBContext _context;
-        private readonly ICacheService _cacheService;
+        private readonly IPortfolioCacheService _cacheService;
         private readonly IEventPublisher _eventPublisher;
         private readonly ILogger<StockRepository> _logger;
 
-        public StockRepository(ApplicationDBContext context, ICacheService cacheService,
+        public StockRepository(ApplicationDBContext context, IPortfolioCacheService cacheService,
             IEventPublisher eventPublisher,
             ILogger<StockRepository> logger)
         {
