@@ -16,8 +16,7 @@ using Microsoft.AspNetCore.DataProtection;
 using StockHub_Backend.Repositories;
 using StockHub_Backend.Services.redis;
 using StockHub_Backend.Services.YahooFinanceApiService;
-using StockHub_Backend.Kafka;
-using StockHub_Backend.BackgroundServices;
+using StockHub_Backend.Services.Kafka.YahooStockData;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -55,8 +54,7 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
     options.Password.RequireUppercase = true;
     options.Password.RequireNonAlphanumeric = true;
     options.Password.RequiredLength = 12;
-    
-    // Email confirmation settings
+    options.User.RequireUniqueEmail = true;
     options.SignIn.RequireConfirmedEmail = false;
 })
 .AddEntityFrameworkStores<ApplicationDBContext>()
@@ -119,21 +117,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
 // =============================================================================
 
 // Configure HTTP client for Yahoo Finance API with headers and timeout
-builder.Services.AddHttpClient<IYahooFinanceApiService, YahooFinanceApiService>((serviceProvider, client) =>
-{
-    var config = serviceProvider.GetRequiredService<IConfiguration>();
-    var section = config.GetSection("YahooFinance");
-
-    var baseUrl = section["BaseUrl"]!;
-    var apiKey = section["ApiKey"]!;
-    var apiHost = section["ApiHost"]!;
-
-    client.BaseAddress = new Uri(baseUrl);
-    client.DefaultRequestHeaders.Add("X-RapidAPI-Key", apiKey);
-    client.DefaultRequestHeaders.Add("X-RapidAPI-Host", apiHost);
-    client.Timeout = TimeSpan.FromSeconds(30);
-});
-
+builder.Services.AddHttpClient<IYahooFinanceApiService, YahooFinanceApiService>();
 // =============================================================================
 // EMAIL SERVICE CONFIGURATION
 // =============================================================================
@@ -245,7 +229,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(option =>
 {
     option.SwaggerDoc("v1", new OpenApiInfo { Title = "StockHub API", Version = "v1" });
-    
+
     // Configure JWT Bearer authorization in Swagger UI
     option.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -256,7 +240,7 @@ builder.Services.AddSwaggerGen(option =>
         BearerFormat = "JWT",
         Scheme = "Bearer"
     });
-    
+
     option.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {

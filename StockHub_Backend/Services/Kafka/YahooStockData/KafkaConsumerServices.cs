@@ -8,7 +8,7 @@ using System.Text.Json;
 using StockHub_Backend.Models;
 using StockHub_Backend.Interfaces;
 
-namespace StockHub_Backend.BackgroundServices
+namespace StockHub_Backend.Services.Kafka.YahooStockData
 {
     public class KafkaConsumerService : BackgroundService
     {
@@ -28,7 +28,7 @@ namespace StockHub_Backend.BackgroundServices
             var config = new ConsumerConfig
             {
                 BootstrapServers = configuration["Kafka:BootstrapServers"] ?? "localhost:9092",
-                GroupId = configuration["Kafka:ConsumerGroups:StockPrices"] ?? "stock-prices-consumer",
+                GroupId = configuration["Kafka:ConsumerGroups:YahooStockPrices"] ?? "yahoo-stock-prices-consumer",
                 ClientId = configuration["Kafka:ClientId"] ?? "StockHub",
                 AutoOffsetReset = AutoOffsetReset.Latest,
                 EnableAutoCommit = true,
@@ -41,12 +41,12 @@ namespace StockHub_Backend.BackgroundServices
                 .SetErrorHandler((_, e) => _logger.LogError("Kafka consumer error: {Error}", e.Reason))
                 .SetPartitionsAssignedHandler((c, partitions) =>
                 {
-                    _logger.LogInformation("Assigned partitions: [{Partitions}]", 
+                    _logger.LogInformation("Assigned partitions: [{Partitions}]",
                         string.Join(", ", partitions.Select(p => $"{p.Topic}:{p.Partition}")));
                 })
                 .SetPartitionsRevokedHandler((c, partitions) =>
                 {
-                    _logger.LogInformation("Revoked partitions: [{Partitions}]", 
+                    _logger.LogInformation("Revoked partitions: [{Partitions}]",
                         string.Join(", ", partitions.Select(p => $"{p.Topic}:{p.Partition}")));
                 })
                 .Build();
@@ -58,75 +58,125 @@ namespace StockHub_Backend.BackgroundServices
             };
         }
 
+        // protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        // {
+        //     var topics = new[] { "yahoo-stock-prices" };
+        //     _consumer.Subscribe(topics);
+
+        //     _logger.LogInformation("Kafka consumer started. Subscribed to topics: {Topics}", string.Join(", ", topics));
+
+        //     try
+        //     {
+        //         while (!stoppingToken.IsCancellationRequested)
+        //         {
+        //             try
+        //             {
+        //                 var consumeResult = _consumer.Consume(stoppingToken);
+
+        //                 if (consumeResult?.Message?.Value != null)
+        //                 {
+        //                     await ProcessMessageAsync(consumeResult.Message);
+        //                 }
+        //             }
+        //             catch (ConsumeException ex)
+        //             {
+        //                 _logger.LogError(ex, "Error consuming message: {Error}", ex.Error.Reason);
+        //                 await Task.Delay(1000, stoppingToken); // Brief pause before retrying
+        //             }
+        //             catch (OperationCanceledException)
+        //             {
+        //                 break; // Expected when cancellation is requested
+        //             }
+        //             catch (Exception ex)
+        //             {
+        //                 _logger.LogError(ex, "Unexpected error in Kafka consumer");
+        //                 await Task.Delay(5000, stoppingToken); // Longer pause for unexpected errors
+        //             }
+        //         }
+        //     }
+        //     catch (OperationCanceledException)
+        //     {
+        //         _logger.LogInformation("Kafka consumer cancelled");
+        //     }
+        //     finally
+        //     {
+        //         try
+        //         {
+        //             _consumer.Close();
+        //             _logger.LogInformation("Kafka consumer closed");
+        //         }
+        //         catch (Exception ex)
+        //         {
+        //             _logger.LogError(ex, "Error closing Kafka consumer");
+        //         }
+        //     }
+        // }
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            var topics = new[] { "stock-prices" };
+            var topics = new[] { "yahoo-stock-prices" };
             _consumer.Subscribe(topics);
 
             _logger.LogInformation("Kafka consumer started. Subscribed to topics: {Topics}", string.Join(", ", topics));
 
-            try
+            await Task.Run(async () =>
             {
                 while (!stoppingToken.IsCancellationRequested)
                 {
                     try
                     {
-                        var consumeResult = _consumer.Consume(stoppingToken);
-                        
+                        ConsumeResult<string, string>? consumeResult = null;
+
+                        // Poll Kafka on a background thread to prevent blocking
+                        await Task.Run(() =>
+                        {
+                            try
+                            {
+                                consumeResult = _consumer.Consume(stoppingToken);
+                            }
+                            catch (ConsumeException ex)
+                            {
+                                _logger.LogError(ex, "Kafka consume error: {Error}", ex.Error.Reason);
+                            }
+                        }, stoppingToken);
+
                         if (consumeResult?.Message?.Value != null)
                         {
                             await ProcessMessageAsync(consumeResult.Message);
                         }
                     }
-                    catch (ConsumeException ex)
-                    {
-                        _logger.LogError(ex, "Error consuming message: {Error}", ex.Error.Reason);
-                        await Task.Delay(1000, stoppingToken); // Brief pause before retrying
-                    }
                     catch (OperationCanceledException)
                     {
-                        break; // Expected when cancellation is requested
+                        _logger.LogInformation("Kafka consumer cancellation requested.");
+                        break;
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Unexpected error in Kafka consumer");
-                        await Task.Delay(5000, stoppingToken); // Longer pause for unexpected errors
+                        _logger.LogError(ex, "Unexpected error in Kafka consumer loop.");
+                        await Task.Delay(5000, stoppingToken); // Pause briefly before retry
                     }
                 }
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.LogInformation("Kafka consumer cancelled");
-            }
-            finally
-            {
-                try
-                {
-                    _consumer.Close();
-                    _logger.LogInformation("Kafka consumer closed");
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error closing Kafka consumer");
-                }
-            }
+
+                _consumer.Close();
+                _logger.LogInformation("Kafka consumer closed.");
+            }, stoppingToken);
         }
+
 
         private async Task ProcessMessageAsync(Message<string, string> message)
         {
             try
             {
                 var stockMessage = JsonSerializer.Deserialize<KafkaStockMessage>(message.Value, _jsonOptions);
-                
+
                 if (stockMessage != null)
                 {
-                    _logger.LogDebug("Processing stock price update for {Symbol}: {Price}", 
+                    _logger.LogDebug("Processing stock price update for {Symbol}: {Price}",
                         stockMessage.Symbol, stockMessage.Price);
 
                     // Broadcast to WebSocket clients
                     using var scope = _serviceProvider.CreateScope();
                     var hubContext = scope.ServiceProvider.GetService<IHubContext<StockPriceHub, IStockPriceHub>>();
-                    
+
                     if (hubContext != null)
                     {
                         await hubContext.Clients.All.SendStockPriceUpdate(

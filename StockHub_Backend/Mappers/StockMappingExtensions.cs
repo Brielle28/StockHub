@@ -90,8 +90,8 @@ namespace StockHub_Backend.Mappers
                 CurrentPrice = yahooQuote.RegularMarketPrice ?? 0,
                 Change = yahooQuote.RegularMarketChange ?? 0,
                 ChangePercent = yahooQuote.RegularMarketChangePercent ?? 0,
-                LastUpdated = yahooQuote.RegularMarketTime.HasValue 
-                    ? DateTimeOffset.FromUnixTimeSeconds(yahooQuote.RegularMarketTime.Value).DateTime 
+                LastUpdated = yahooQuote.RegularMarketTime.HasValue
+                    ? DateTimeOffset.FromUnixTimeSeconds(yahooQuote.RegularMarketTime.Value).DateTime
                     : DateTime.UtcNow,
                 Currency = yahooQuote.Currency,
                 Volume = yahooQuote.RegularMarketVolume ?? 0,
@@ -117,39 +117,81 @@ namespace StockHub_Backend.Mappers
             };
         }
 
-        public static List<StockDataPoint> FromYahooHistory(this ChartResult chartResult)
+        // public static List<StockDataPoint> FromYahooHistory(this ChartResult chartResult)
+        // {
+        //     var dataPoints = new List<StockDataPoint>();
+
+        //     if (chartResult.Timestamp.Count == 0 || chartResult.Indicators.Quote.Count == 0)
+        //         return dataPoints;
+
+        //     var quotes = chartResult.Indicators.Quote[0];
+        //     var adjClose = chartResult.Indicators.Adjclose.Count > 0 
+        //         ? chartResult.Indicators.Adjclose[0].Adjclose 
+        //         : new List<decimal?>();
+
+        //     for (int i = 0; i < chartResult.Timestamp.Count; i++)
+        //     {
+        //         if (i >= quotes.Open.Count || i >= quotes.High.Count || 
+        //             i >= quotes.Low.Count || i >= quotes.Close.Count || i >= quotes.Volume.Count)
+        //             continue;
+
+        //         var dataPoint = new StockDataPoint
+        //         {
+        //             Date = DateTimeOffset.FromUnixTimeSeconds(chartResult.Timestamp[i]).DateTime,
+        //             Open = quotes.Open[i] ?? 0,
+        //             High = quotes.High[i] ?? 0,
+        //             Low = quotes.Low[i] ?? 0,
+        //             Close = quotes.Close[i] ?? 0,
+        //             Volume = quotes.Volume[i] ?? 0,
+        //             AdjustedClose = i < adjClose.Count ? (adjClose[i] ?? quotes.Close[i] ?? 0) : (quotes.Close[i] ?? 0)
+        //         };
+
+        //         dataPoints.Add(dataPoint);
+        //     }
+
+        //     return dataPoints;
+        // }
+        public static List<StockDataPoint> FromYahooHistory(this YahooHistoryResponseDto yahooResponse)
         {
             var dataPoints = new List<StockDataPoint>();
-            
-            if (chartResult.Timestamp.Count == 0 || chartResult.Indicators.Quote.Count == 0)
+
+            if (yahooResponse?.Body == null || !yahooResponse.Body.Any())
                 return dataPoints;
 
-            var quotes = chartResult.Indicators.Quote[0];
-            var adjClose = chartResult.Indicators.Adjclose.Count > 0 
-                ? chartResult.Indicators.Adjclose[0].Adjclose 
-                : new List<decimal?>();
-
-            for (int i = 0; i < chartResult.Timestamp.Count; i++)
+            foreach (var kvp in yahooResponse.Body)
             {
-                if (i >= quotes.Open.Count || i >= quotes.High.Count || 
-                    i >= quotes.Low.Count || i >= quotes.Close.Count || i >= quotes.Volume.Count)
-                    continue;
+                var dataPoint = kvp.Value;
 
-                var dataPoint = new StockDataPoint
+                // Parse the date string - assuming it's in a standard format
+                if (!DateTime.TryParse(dataPoint.Date, out var parsedDate))
                 {
-                    Date = DateTimeOffset.FromUnixTimeSeconds(chartResult.Timestamp[i]).DateTime,
-                    Open = quotes.Open[i] ?? 0,
-                    High = quotes.High[i] ?? 0,
-                    Low = quotes.Low[i] ?? 0,
-                    Close = quotes.Close[i] ?? 0,
-                    Volume = quotes.Volume[i] ?? 0,
-                    AdjustedClose = i < adjClose.Count ? (adjClose[i] ?? quotes.Close[i] ?? 0) : (quotes.Close[i] ?? 0)
+                    // Fallback to UTC timestamp if date string parsing fails
+                    parsedDate = DateTimeOffset.FromUnixTimeSeconds(dataPoint.Date_Utc).DateTime;
+                }
+
+                var stockDataPoint = new StockDataPoint
+                {
+                    Date = parsedDate,
+                    Open = dataPoint.Open,
+                    High = dataPoint.High,
+                    Low = dataPoint.Low,
+                    Close = dataPoint.Close,
+                    Volume = dataPoint.Volume,
+                    AdjustedClose = dataPoint.Adjclose
                 };
 
-                dataPoints.Add(dataPoint);
+                dataPoints.Add(stockDataPoint);
             }
 
-            return dataPoints;
+            // Sort by date to ensure chronological order
+            return dataPoints.OrderBy(dp => dp.Date).ToList();
+        }
+
+        // Alternative method if you want to access the metadata as well
+        public static (List<StockDataPoint> DataPoints, YahooHistoryMeta Metadata) FromYahooHistoryWithMeta(this YahooHistoryResponseDto yahooResponse)
+        {
+            var dataPoints = yahooResponse.FromYahooHistory();
+            return (dataPoints, yahooResponse?.Meta ?? new YahooHistoryMeta());
         }
     }
 }

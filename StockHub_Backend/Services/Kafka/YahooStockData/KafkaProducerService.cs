@@ -7,8 +7,8 @@ using System.Text.Json;
 using StockHub_Backend.Interfaces;
 using StockHub_Backend.Models;
 
-namespace StockHub_Backend.Kafka
-{
+namespace StockHub_Backend.Services.Kafka.YahooStockData
+{ 
     public class KafkaProducerService : IKafkaProducerService, IDisposable
     {
         private readonly IProducer<string, string> _producer;
@@ -19,7 +19,7 @@ namespace StockHub_Backend.Kafka
         public KafkaProducerService(IConfiguration configuration, ILogger<KafkaProducerService> logger)
         {
             _logger = logger;
-            _topicName = configuration["Kafka:Topics:StockPrices"] ?? "stock-prices";
+            _topicName = configuration["Kafka:Topics:YahooStockPrices"] ?? "yahoo-stock-prices";
 
             var config = new ProducerConfig
             {

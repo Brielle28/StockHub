@@ -81,10 +81,10 @@ namespace StockHub_Backend.Dtos.StockData
     {
         [Required]
         public string Symbol { get; set; } = string.Empty;
-        
+
         [Required]
         public string Range { get; set; } = "1mo"; // 1d, 5d, 1mo, 3mo, 6mo, 1y, 2y, 5y, 10y, ytd, max
-        
+
         public string Interval { get; set; } = "1d"; // 1m, 2m, 5m, 15m, 30m, 60m, 90m, 1h, 1d, 5d, 1wk, 1mo, 3mo
     }
 
@@ -125,40 +125,90 @@ namespace StockHub_Backend.Dtos.StockData
         public decimal? TrailingPE { get; set; }
     }
 
+    // public class YahooHistoryResponseDto
+    // {
+    //     public ChartData Chart { get; set; } = new();
+    // }
+
+    // public class ChartData
+    // {
+    //     public List<ChartResult> Result { get; set; } = new();
+    //     public object? Error { get; set; }
+    // }
+
+    // public class ChartResult
+    // {
+    //     public List<long> Timestamp { get; set; } = new();
+    //     public IndicatorsData Indicators { get; set; } = new();
+    // }
+
+    // public class IndicatorsData
+    // {
+    //     public List<QuoteData> Quote { get; set; } = new();
+    //     public List<AdjCloseData> Adjclose { get; set; } = new();
+    // }
+
+    // public class QuoteData
+    // {
+    //     public List<decimal?> Open { get; set; } = new();
+    //     public List<decimal?> High { get; set; } = new();
+    //     public List<decimal?> Low { get; set; } = new();
+    //     public List<decimal?> Close { get; set; } = new();
+    //     public List<long?> Volume { get; set; } = new();
+    // }
+
+    // public class AdjCloseData
+    // {
+    //     public List<decimal?> Adjclose { get; set; } = new();
+    // }
+
+    // HISTORY-RELATED DTOs (new structure matching the API response)
     public class YahooHistoryResponseDto
     {
-        public ChartData Chart { get; set; } = new();
+        public YahooHistoryMeta Meta { get; set; } = new();
+        public Dictionary<string, YahooHistoryDataPoint> Body { get; set; } = new();
     }
 
-    public class ChartData
+    public class YahooHistoryMeta
     {
-        public List<ChartResult> Result { get; set; } = new();
-        public object? Error { get; set; }
+        public string ProcessedTime { get; set; } = string.Empty;
+        public string Currency { get; set; } = string.Empty;
+        public string Symbol { get; set; } = string.Empty;
+        public string ExchangeName { get; set; } = string.Empty;
+        public string FullExchangeName { get; set; } = string.Empty;
+        public string InstrumentType { get; set; } = string.Empty;
+        public long FirstTradeDate { get; set; }
+        public long RegularMarketTime { get; set; }
+        public bool HasPrePostMarketData { get; set; }
+        public int Gmtoffset { get; set; }
+        public string Timezone { get; set; } = string.Empty;
+        public string ExchangeTimezoneName { get; set; } = string.Empty;
+        public decimal RegularMarketPrice { get; set; }
+        public decimal FiftyTwoWeekHigh { get; set; }
+        public decimal FiftyTwoWeekLow { get; set; }
+        public decimal RegularMarketDayHigh { get; set; }
+        public decimal RegularMarketDayLow { get; set; }
+        public long RegularMarketVolume { get; set; }
+        public string LongName { get; set; } = string.Empty;
+        public string ShortName { get; set; } = string.Empty;
+        public decimal ChartPreviousClose { get; set; }
+        public int PriceHint { get; set; }
+        public string DataGranularity { get; set; } = string.Empty;
+        public string Range { get; set; } = string.Empty;
+        public string Version { get; set; } = string.Empty;
+        public int Status { get; set; }
+        public string Copywrite { get; set; } = string.Empty;
     }
 
-    public class ChartResult
+    public class YahooHistoryDataPoint
     {
-        public List<long> Timestamp { get; set; } = new();
-        public IndicatorsData Indicators { get; set; } = new();
-    }
-
-    public class IndicatorsData
-    {
-        public List<QuoteData> Quote { get; set; } = new();
-        public List<AdjCloseData> Adjclose { get; set; } = new();
-    }
-
-    public class QuoteData
-    {
-        public List<decimal?> Open { get; set; } = new();
-        public List<decimal?> High { get; set; } = new();
-        public List<decimal?> Low { get; set; } = new();
-        public List<decimal?> Close { get; set; } = new();
-        public List<long?> Volume { get; set; } = new();
-    }
-
-    public class AdjCloseData
-    {
-        public List<decimal?> Adjclose { get; set; } = new();
+        public string Date { get; set; } = string.Empty;
+        public long Date_Utc { get; set; }
+        public decimal Open { get; set; }
+        public decimal High { get; set; }
+        public decimal Low { get; set; }
+        public decimal Close { get; set; }
+        public long Volume { get; set; }
+        public decimal Adjclose { get; set; }
     }
 }

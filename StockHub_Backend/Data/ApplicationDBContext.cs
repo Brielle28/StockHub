@@ -111,6 +111,10 @@ namespace StockHub_Backend.Data
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+            // Enforce unique normalized email
+            builder.Entity<AppUser>()
+                .HasIndex(u => u.NormalizedEmail)
+                .IsUnique();
 
             // Configure the relationship between Portfolio and AppUser
             builder.Entity<Portfolio>()
