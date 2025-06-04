@@ -7,12 +7,13 @@ import Registration from "./Pages/Registration";
 import ForgetPassword from "./Pages/ForgetPassword";
 import DashboardLayout from "./Layout/DashboardLayout";
 import DashboardHome from "./Components/Dashboard/DashboardHome";
-import MarketPage from "./Components/Dashboard/MarketPage";
-import PortfolioPage from "./Components/Dashboard/PortfolioPage";
+import MarketPage from "./Components/Dashboard/MarketPlace/MarketPage";
+// import PortfolioPage from "./Components/Dashboard/PortfolioPage";
 import NewsPage from "./Components/Dashboard/NewsPage";
-import NotificationsPage from "./Components/Dashboard/NotificationsPage";
 import SettingsPage from "./Components/Dashboard/SettingsPage";
 import ErrorPage from "./Pages/ErrorPage";
+import PortfolioPage from "./Components/Dashboard/Portfolio/PortfolioPage";
+import ContextProviderWrapper from "./Context/ContextProviderWrapper";
 
 const routing = createBrowserRouter([
   {
@@ -58,10 +59,6 @@ const routing = createBrowserRouter([
         element: <NewsPage />,
       },
       {
-        path: "notifications",
-        element: <NotificationsPage />,
-      },
-      {
         path: "settings",
         element: <SettingsPage />,
       },
@@ -69,12 +66,16 @@ const routing = createBrowserRouter([
   },
   {
     path: "*",
-    element: <ErrorPage/>,
+    element: <ErrorPage />,
   },
 ]);
 
 const AppRouter = () => {
-  return <RouterProvider router={routing} />;
+  return (
+    <ContextProviderWrapper>
+      <RouterProvider router={routing} />
+    </ContextProviderWrapper>
+  );
 };
 
 export default AppRouter;

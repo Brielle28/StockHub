@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Routes, Route, Link, Navigate, } from 'react-router-dom';
 import DashboardHome from "../Components/Dashboard/DashboardHome";
-import MarketPage from "../Components/Dashboard/MarketPage";
+import MarketPage from "../Components/Dashboard/MarketPlace/MarketPage";
 import NewsPage from "../Components/Dashboard/NewsPage";
 import NotificationsPage from "../Components/Dashboard/NotificationsPage";
 // import PortfolioPage from "../Components/Dashboard/PortfolioPage";

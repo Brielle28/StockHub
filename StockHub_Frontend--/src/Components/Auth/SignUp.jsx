@@ -159,22 +159,6 @@ const SignUp = () => {
             Create Account
           </button>
         </form>
-
-        <div className="my-3 flex items-center justify-between">
-          <div className="h-[1px] flex-1 bg-gray-700" />
-          <h1 className="text-gray-400 mx-4 text-sm">OR</h1>
-          <div className="h-[1px] flex-1 bg-gray-700" />
-        </div>
-
-        <div className="space-y-4">
-          <button
-            type="button"
-            className="flex items-center justify-center w-full bg-[#1e2104] text-white font-medium py-3 rounded-lg hover:bg-[#2d3206] transition-all duration-300"
-          >
-            <FaGoogle className="mr-3 text-[#d4fb2b]" size={18} />
-            <span>Sign Up With Google</span>
-          </button>
-        </div>
       </div>
     </div>
   );
