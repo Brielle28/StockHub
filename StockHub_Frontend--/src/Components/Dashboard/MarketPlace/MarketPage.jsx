@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FiClock } from "react-icons/fi";
+import { FiClock,FiSearch } from "react-icons/fi";
 import { useSharedPortfolio } from "../../../Context/PortfolioContext";
 import { mockSearchResults } from "../../../Utils/MarketData";
 import StockQuoteSection from "./StockQuoteSection";

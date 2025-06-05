@@ -279,7 +279,7 @@ builder.Services.AddCors(options =>
     {
         policy.AllowAnyHeader()
             .AllowAnyMethod()
-            .WithOrigins("http://localhost:3000") // Frontend URL
+            .WithOrigins("http://localhost:5173") // Frontend URL
             .AllowCredentials(); // Required for SignalR
     });
 });
@@ -325,7 +325,7 @@ app.UseExceptionHandler(errorApp =>
 
 // Configure middleware pipeline in correct order
 app.UseRateLimiter();           // Rate limiting must come early
-app.UseHttpsRedirection();      // Force HTTPS
+// app.UseHttpsRedirection();      // Force HTTPS
 app.UseCors("CorsPolicy");      // CORS before authentication
 app.UseAuthentication();        // Authentication before authorization
 app.UseAuthorization();         // Authorization
