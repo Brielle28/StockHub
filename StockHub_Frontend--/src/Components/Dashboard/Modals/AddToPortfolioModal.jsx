@@ -31,7 +31,7 @@ const AddToPortfolioModal = ({ isOpen, stock, onClose, onAdd }) => {
 
   return (
     <div className="fixed inset-0 bg-transparent backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-[#111111] bg-opacity-90 p-6 rounded-xl w-full max-w-md border border-gray-700 shadow-xl backdrop-filter backdrop-blur-md">
+      <div className="bg-[#b60606] bg-opacity-90 p-6 rounded-xl w-full max-w-md border border-gray-700 shadow-xl backdrop-filter backdrop-blur-md">
         <h2 className="text-xl font-bold mb-4 text-gray-300">
           Add {stock?.symbol} to Portfolio
         </h2>
@@ -149,7 +149,7 @@ const AddToPortfolioModal = ({ isOpen, stock, onClose, onAdd }) => {
             Cancel
           </button>
           <button
-            className="px-4 py-2 bg-transparent border border-[#d4fb2b] rounded-lg text-[#d4fb2b] hover:bg-[#d4fb2b] hover:text-black transition-all"
+            className="px-4 py-2 bg-transparent border border-[#582bfb] rounded-lg text-[#d4fb2b] hover:bg-[#d4fb2b] hover:text-black transition-all"
             onClick={handleSubmit}
             disabled={
               (!createNew && !selectedPortfolio) ||

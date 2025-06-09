@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace StockHub_Backend.Services
+namespace StockHub_Backend.Interfaces
 {
     public interface IPortfolioCacheService
     {

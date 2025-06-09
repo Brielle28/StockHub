@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
+// import axiosInstance from '../Services/axiosInstance';
+import axios from "axios";
 import axiosInstance from "../Services/axios";
 
 export const AuthContext = createContext();
@@ -22,66 +24,95 @@ const AuthProvider = ({ children }) => {
   };
 
   const fetchUser = async () => {
+    const res = await axiosInstance.get("/StockHub/users/me");
+    setUser(res.data);
+    localStorage.setItem("user", JSON.stringify(res.data));
+  };
+
+  // const initAuth = async () => {
+  //   const accessToken = localStorage.getItem('accessToken');
+  //   const refreshToken = localStorage.getItem('refreshToken');
+
+  //   if (!accessToken || !refreshToken) {
+  //     setLoading(false);
+  //     return;
+  //   }
+
+  //   try {
+  //     if (isTokenExpired(accessToken)) {
+  //       const res = await axios.post(
+  //         `${import.meta.env.VITE_API_BASE_URL}/StockHub/users/refresh-token`,
+  //         { accessToken, refreshToken }
+  //       );
+  //       localStorage.setItem('accessToken', res.data.accessToken);
+  //     }
+
+  //     await fetchUser();
+  //     setIsAuthenticated(true);
+  //   } catch {
+  //     logout();
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+  const initAuth = async () => {
+    const accessToken = localStorage.getItem("accessToken");
+    const refreshToken = localStorage.getItem("refreshToken");
+
+    if (!accessToken || !refreshToken) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await axiosInstance.get("/StockHub/users/me");
-      const userData = response.data;
-      setUser(userData);
-      localStorage.setItem("user", JSON.stringify(userData));
-      return userData;
-    } catch (error) {
-      console.error("Failed to fetch user:", error);
-      throw error;
+      if (isTokenExpired(accessToken)) {
+        console.log("Access token expired. Attempting refresh...");
+        const res = await axios.post(
+          `${import.meta.env.VITE_API_BASE_URL}/StockHub/users/refresh-token`,
+          {
+            accessToken,
+            refreshToken,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        // Save new token
+        localStorage.setItem("accessToken", res.data.accessToken);
+      }
+
+      // Now fetch the logged-in user
+      await fetchUser();
+      setIsAuthenticated(true);
+    } catch (err) {
+      console.error("Token refresh failed:", err.response?.data || err.message);
+      logout();
+    } finally {
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    const initAuth = async () => {
-      const accessToken = localStorage.getItem("accessToken");
-      const refreshToken = localStorage.getItem("refreshToken");
-
-      if (!accessToken) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        if (isTokenExpired(accessToken)) {
-          const response = await axiosInstance.post("/StockHub/users/refresh-token", {
-            refreshToken,
-          });
-          localStorage.setItem("accessToken", response.data.accessToken);
-        }
-
-        await fetchUser();
-        setIsAuthenticated(true);
-      } catch (error) {
-        logout();
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initAuth();
-  }, []);
-
   const login = async (username, password) => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const response = await axiosInstance.post("/StockHub/users/login", {
+      const res = await axiosInstance.post("/StockHub/users/login", {
         username,
         password,
       });
 
-      const { accessToken, refreshToken } = response.data;
+      const { accessToken, refreshToken } = res.data;
       localStorage.setItem("accessToken", accessToken);
       localStorage.setItem("refreshToken", refreshToken);
 
-      await fetchUser(); // 🚀 get real-time user info from backend
+      await fetchUser();
       setIsAuthenticated(true);
 
       return { success: true };
-    } catch (error) {
-      const message = error.response?.data?.message || "Login failed";
+    } catch (err) {
+      const message = err.response?.data?.message || "Login failed";
       return { success: false, error: message };
     } finally {
       setLoading(false);
@@ -89,38 +120,27 @@ const AuthProvider = ({ children }) => {
   };
 
   const register = async (userData) => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const response = await axiosInstance.post("/StockHub/users/register", {
-        username: userData.username,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        email: userData.email,
-        password: userData.password,
-      });
-
-      const { accessToken, refreshToken } = response.data;
+      const res = await axiosInstance.post(
+        "/StockHub/users/register",
+        userData
+      );
+      const { accessToken, refreshToken } = res.data;
 
       localStorage.setItem("accessToken", accessToken);
       localStorage.setItem("refreshToken", refreshToken);
 
-      await fetchUser(); // 🚀 get the newly registered user info
+      await fetchUser();
       setIsAuthenticated(true);
 
       return { success: true };
-    } catch (error) {
-      console.log("Registration error:", error);
-      let message = "Registration failed";
-      let errors = error.response?.data?.errors || [];
-
+    } catch (err) {
+      const errors = err.response?.data?.errors || {};
       return {
         success: false,
-        error: message,
+        error: "Registration failed",
         details: errors,
-        formattedErrors: errors.map((err) => ({
-          code: err.code,
-          description: err.description,
-        })),
       };
     } finally {
       setLoading(false);
@@ -128,33 +148,39 @@ const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    try {
-      const refreshToken = localStorage.getItem("refreshToken");
-      if (refreshToken) {
-        await axiosInstance.post("/StockHub/users/logout", { refreshToken });
-      }
-    } catch (error) {
-      console.error("Logout error:", error);
-    } finally {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("user");
+    const accessToken = localStorage.getItem("accessToken");
+    const refreshToken = localStorage.getItem("refreshToken");
 
+    try {
+      if (accessToken && refreshToken) {
+        await axiosInstance.post("/StockHub/users/logout", {
+          accessToken,
+          refreshToken,
+        });
+      }
+    } catch (err) {
+      console.error("Logout failed:", err);
+    } finally {
+      localStorage.clear();
       setUser(null);
       setIsAuthenticated(false);
     }
   };
 
   const refreshUser = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       await fetchUser();
-    } catch (error) {
-      console.error("Failed to refresh user:", error);
+    } catch (err) {
+      console.error("User refresh failed:", err);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    initAuth();
+  }, []);
 
   const value = {
     user,
@@ -163,7 +189,6 @@ const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    fetchUser,
     refreshUser,
   };
 
@@ -175,7 +200,7 @@ export default AuthProvider;
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error("useAuth must be used within AuthProvider");
   }
   return context;
 };

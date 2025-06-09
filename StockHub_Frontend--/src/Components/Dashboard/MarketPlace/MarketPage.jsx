@@ -1,35 +1,25 @@
 import { useState } from "react";
-import { FiClock,FiSearch } from "react-icons/fi";
+import { FiClock, FiSearch } from "react-icons/fi";
 import { useSharedPortfolio } from "../../../Context/PortfolioContext";
-import { mockSearchResults } from "../../../Utils/MarketData";
+import { useMarketData } from "../../../Context/MarketDataContext";
 import StockQuoteSection from "./StockQuoteSection";
 import StockHistorySection from "./StockHistorySection";
 import StockNewsSection from "./StockNewsSection";
-
 import AddToPortfolioMarketModal from "../Modals/AddToPortfolioMarketModal";
 import StockSearchSection from "./StockSearchSection";
+
 export default function MarketPage() {
-  const { addStockWithOptionalPortfolio, setError } = useSharedPortfolio();
+  const { addStockWithOptionalPortfolio } = useSharedPortfolio();
+  const marketData = useMarketData();
+  
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
   const [selectedStock, setSelectedStock] = useState(null);
   const [showAddToPortfolioModal, setShowAddToPortfolioModal] = useState(false);
   const [stockToAdd, setStockToAdd] = useState(null);
 
-  // Filter search results based on query
-  const searchResults = searchQuery
-    ? mockSearchResults.filter(
-        (stock) =>
-          stock.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          stock.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : [];
-
   const handleStockSelect = (stock) => {
     setSelectedStock(stock);
-    // Here you would typically call multiple APIs:
-    // - Get detailed quote
-    // - Get historical data
-    // - Get news
   };
 
   const handleAddToPortfolio = (stock) => {
@@ -42,7 +32,7 @@ export default function MarketPage() {
       await addStockWithOptionalPortfolio(portfolioData);
     } catch (error) {
       console.error("Error adding stock to portfolio:", error);
-      throw error; // Re-throw so modal can handle it
+      throw error;
     }
   };
 
@@ -66,21 +56,30 @@ export default function MarketPage() {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           searchResults={searchResults}
+          setSearchResults={setSearchResults}
           onStockSelect={handleStockSelect}
           selectedStock={selectedStock}
+          marketData={marketData}
         />
       </div>
 
       <div className="flex flex-col w-full gap-3">
-        <div className=" space-y-6">
+        <div className="space-y-6">
           {selectedStock && (
             <>
               <StockQuoteSection
                 stock={selectedStock}
                 onAddToPortfolio={handleAddToPortfolio}
+                marketData={marketData}
               />
-              <StockHistorySection stock={selectedStock} />
-              <StockNewsSection stock={selectedStock} />
+              <StockHistorySection 
+                stock={selectedStock} 
+                marketData={marketData}
+              />
+              <StockNewsSection 
+                stock={selectedStock} 
+                marketData={marketData}
+              />
             </>
           )}
 

@@ -1,25 +1,42 @@
 import { useEffect, useState } from "react";
 import { FiSearch, FiRefreshCw } from "react-icons/fi";
+
 const StockSearchSection = ({
   searchQuery,
   setSearchQuery,
   searchResults,
+  setSearchResults,
   onStockSelect,
   selectedStock,
+  marketData,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   // Debounced search effect
   useEffect(() => {
     if (searchQuery.length > 0) {
       setIsLoading(true);
-      const timer = setTimeout(() => {
-        // Here you would call your actual search API
-        setIsLoading(false);
+      setError(null);
+      
+      const timer = setTimeout(async () => {
+        try {
+          const results = await marketData.searchStocks(searchQuery, 10);
+          setSearchResults(results);
+        } catch (err) {
+          console.error("Search error:", err);
+          setError("Failed to search stocks. Please try again.");
+          setSearchResults([]);
+        } finally {
+          setIsLoading(false);
+        }
       }, 300);
+      
       return () => clearTimeout(timer);
+    } else {
+      setSearchResults([]);
     }
-  }, [searchQuery]);
+  }, [searchQuery, marketData]);
 
   return (
     <div className="bg-[#111111] rounded-xl p-6 border border-gray-800">
@@ -43,15 +60,21 @@ const StockSearchSection = ({
         )}
       </div>
 
+      {error && (
+        <div className="bg-red-900 border border-red-600 text-red-300 p-3 rounded-lg mb-4">
+          {error}
+        </div>
+      )}
+
       {searchQuery && (
-        <div className="space-y-2">
+        <div className="space-y-2 h-[150px] md:h-[200px] overflow-y-scroll">
           {searchResults.length > 0 ? (
             searchResults.map((stock) => (
               <div
                 key={stock.symbol}
-                className={`p-4 rounded-lg border cursor-pointer transition-all ${
+                className={`p-2 md:py-2 rounded-lg border cursor-pointer transition-all ${
                   selectedStock?.symbol === stock.symbol
-                    ? "border-[#d4fb2b] bg-[#d4fb2b] bg-opacity-5"
+                    ? "border-[#d4fb2b] bg-[#d5fb2b5b] text-black bg-opacity-5"
                     : "border-gray-700 hover:border-gray-600 bg-gray-800 hover:bg-gray-750"
                 }`}
                 onClick={() => onStockSelect(stock)}
@@ -59,40 +82,48 @@ const StockSearchSection = ({
                 <div className="flex justify-between items-center">
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
-                      <span className="text-[#d4fb2b] font-bold text-lg">
+                      <span className="text-[#d4fb2b] font-bold text-sm md:text-lg">
                         {stock.symbol}
                       </span>
                       <span className="text-gray-300">{stock.name}</span>
                     </div>
                     <div className="text-sm text-gray-400 mt-1">
-                      Market Cap: {stock.marketCap} • Volume: {stock.volume}
+                      {stock.marketCap && `Market Cap: ${stock.marketCap}`}
+                      {stock.volume && ` • Volume: ${stock.volume?.toLocaleString()}`}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-lg font-semibold text-gray-300">
-                      ${stock.currentPrice.toFixed(2)}
+                  {stock.currentPrice && (
+                    <div className="text-right">
+                      <div className="text-lg font-semibold text-gray-300">
+                        ${stock.currentPrice?.toFixed(2)}
+                      </div>
+                      {stock.change !== undefined && (
+                        <div
+                          className={`text-sm ${
+                            stock.change >= 0 ? "text-green-500" : "text-red-500"
+                          }`}
+                        >
+                          {stock.change >= 0 ? "+" : ""}
+                          {stock.change?.toFixed(2)} 
+                          {stock.changePercent && ` (${stock.changePercent?.toFixed(2)}%)`}
+                        </div>
+                      )}
                     </div>
-                    <div
-                      className={`text-sm ${
-                        stock.change >= 0 ? "text-green-500" : "text-red-500"
-                      }`}
-                    >
-                      {stock.change >= 0 ? "+" : ""}
-                      {stock.change.toFixed(2)} (
-                      {stock.changePercent.toFixed(2)}%)
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             ))
           ) : (
-            <div className="text-center py-8 text-gray-500">
-              No stocks found for "{searchQuery}"
-            </div>
+            !isLoading && (
+              <div className="text-center py-8 text-gray-500">
+                No stocks found for "{searchQuery}"
+              </div>
+            )
           )}
         </div>
       )}
     </div>
   );
 };
+
 export default StockSearchSection;

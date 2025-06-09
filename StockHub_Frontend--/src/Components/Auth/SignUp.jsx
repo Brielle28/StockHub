@@ -376,7 +376,7 @@ const SignUp = () => {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [error, setError] = useState("");
   const [validationErrors, setValidationErrors] = useState([]);
-  const [submitResult, setSubmitResult] = useState(null);
+  // const [submitResult, setSubmitResult] = useState(null);
   const { register, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -451,7 +451,8 @@ const SignUp = () => {
       } else {
         setError(result.error);
         console.log(result.error, "this is error");
-        setSubmitResult(result.formattedErrors);
+        // setSubmitResult(result.formattedErrors);
+        console.log(result.formattedErrors, "main error");
         console.log(result, "this is result");
 
         // Access individual error details
@@ -468,9 +469,11 @@ const SignUp = () => {
 
           // Set the validation errors - this will trigger the useEffect above
           setValidationErrors(errorDescriptions);
+
           
           console.log(result.formattedErrors[0].code, "formatted");
           console.log(result.formattedErrors, "formatted2");
+          console.log(validationErrors, "this is v errors")
         } else {
           // Clear validation errors if there are none
           setValidationErrors([]);
@@ -479,7 +482,7 @@ const SignUp = () => {
       }
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");
-      setSubmitResult(null);
+      // setSubmitResult(null);
       setValidationErrors([]);
       console.error("Registration error:", err);
     }

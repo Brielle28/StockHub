@@ -1,4 +1,3 @@
-import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Home from "./Pages/Home";
 import Layout from "./Layout/Layout";
@@ -8,13 +7,14 @@ import ForgetPassword from "./Pages/ForgetPassword";
 import DashboardLayout from "./Layout/DashboardLayout";
 import DashboardHome from "./Components/Dashboard/DashboardHome";
 import MarketPage from "./Components/Dashboard/MarketPlace/MarketPage";
-import NewsPage from "./Components/Dashboard/NewsPage";
-import SettingsPage from "./Components/Dashboard/SettingsPage";
 import ErrorPage from "./Pages/ErrorPage";
 import PortfolioPage from "./Components/Dashboard/Portfolio/PortfolioPage";
-import ContextProviderWrapper from "./Context/ContextProviderWrapper";
 import ProtectedRoute from "./Components/ProtectedRoute";
 import PublicRoute from "./Components/PublicRoute";
+import ContextProviderWrapper from "./Context/ContextProviderWrapper";
+import AuthProvider from "./Context/AuthContext";
+import Notifications from "./Components/Dashboard/Notifications";
+import SharedPortfolioProvider from "./Context/PortfolioContext";
 
 const routing = createBrowserRouter([
   {
@@ -55,7 +55,11 @@ const routing = createBrowserRouter([
     path: "/dashboard",
     element: (
       <ProtectedRoute>
-        <DashboardLayout />
+        <SharedPortfolioProvider>
+        <ContextProviderWrapper>
+          <DashboardLayout />
+        </ContextProviderWrapper>
+        </SharedPortfolioProvider>
       </ProtectedRoute>
     ),
     children: [
@@ -72,12 +76,8 @@ const routing = createBrowserRouter([
         element: <PortfolioPage />,
       },
       {
-        path: "news",
-        element: <NewsPage />,
-      },
-      {
-        path: "settings",
-        element: <SettingsPage />,
+        path: "notifications",
+        element: <Notifications />,
       },
     ],
   },
@@ -89,9 +89,9 @@ const routing = createBrowserRouter([
 
 const AppRouter = () => {
   return (
-    <ContextProviderWrapper>
+    <AuthProvider>
       <RouterProvider router={routing} />
-    </ContextProviderWrapper>
+    </AuthProvider>
   );
 };
 

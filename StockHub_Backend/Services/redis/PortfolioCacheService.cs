@@ -5,7 +5,7 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using StockHub_Backend.Interfaces;
 
-namespace StockHub_Backend.Services
+namespace StockHub_Backend.Services.redis
 {
     public class RedisCacheService : IPortfolioCacheService
     {

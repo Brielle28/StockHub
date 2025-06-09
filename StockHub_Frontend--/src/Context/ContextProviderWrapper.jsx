@@ -1,12 +1,13 @@
-import AuthProvider  from "./AuthContext";
-import SharedPortfolioProvider from "./PortfolioContext"; 
+import AuthProvider from "./AuthContext";
+import { MarketDataProvider } from "./MarketDataContext";
+import SharedPortfolioProvider from "./PortfolioContext";
 
 const ContextProviderWrapper = ({ children }) => {
   return (
     <AuthProvider>
-      <SharedPortfolioProvider >
-        {children}
-      </SharedPortfolioProvider >
+      <SharedPortfolioProvider>
+        <MarketDataProvider>{children}</MarketDataProvider>
+      </SharedPortfolioProvider>
     </AuthProvider>
   );
 };

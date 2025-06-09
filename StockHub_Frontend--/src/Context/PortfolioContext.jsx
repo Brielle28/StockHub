@@ -9,6 +9,7 @@ import AddStockModal from "../Components/Dashboard/Modals/AddStockModal";
 import CreatePortfolioModal from "../Components/Dashboard/Modals/CreatePortfolioModal";
 import AddToPortfolioModal from "../Components/Dashboard/Modals/AddToPortfolioModal";
 import * as portfolioService from "../Services/portfolioService";
+import { useLocation } from "react-router-dom";
 
 export const SharedPortfolioContext = createContext();
 
@@ -25,36 +26,31 @@ const SharedPortfolioProvider = ({ children }) => {
   const [addToPortfolioModalOpen, setAddToPortfolioModalOpen] = useState(false);
   const [currentStockData, setCurrentStockData] = useState(null);
 
-  // Load portfolios on mount
-  useEffect(() => {
-    async function loadPortfolios() {
-      setLoading(true);
-      try {
-        const data = await portfolioService.getUserPortfolios();
-        setPortfolios(data);
-        if (data.length > 0) setSelectedPortfolioId(data[0].id);
-      } catch (err) {
-        setError("Failed to load portfolios");
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadPortfolios();
-  }, []);
+  const location = useLocation();
+  const [hasLoadedPortfolios, setHasLoadedPortfolios] = useState(false);
 
-  // API Handlers
-//   const handleCreatePortfolio = async (portfolioDto) => {
-//     try {
-//       await portfolioService.createPortfolio(portfolioDto);
-//       const updated = await portfolioService.getUserPortfolios();
-//       setPortfolios(updated);
-//       setSelectedPortfolioId(updated[0]?.id || null);
-//     } catch (err) {
-//       setError("Failed to create portfolio");
-//       console.error(err);
-//     }
-//   };
+  useEffect(() => {
+    const shouldLoad = location.pathname.startsWith("/dashboard");
+
+    if (shouldLoad && !hasLoadedPortfolios) {
+      const loadPortfolios = async () => {
+        setLoading(true);
+        try {
+          const data = await portfolioService.getUserPortfolios();
+          setPortfolios(data);
+          if (data.length > 0) setSelectedPortfolioId(data[0].id);
+        } catch (err) {
+          setError("Failed to load portfolios");
+          console.error(err);
+        } finally {
+          setLoading(false);
+          setHasLoadedPortfolios(true);
+        }
+      };
+
+      loadPortfolios();
+    }
+  }, [location.pathname, hasLoadedPortfolios]);
 
   const handleUpdatePortfolio = async (id, portfolioDto) => {
     try {
@@ -112,54 +108,36 @@ const SharedPortfolioProvider = ({ children }) => {
     }
   };
 
-  // Also create a helper for adding stock to portfolio
-  const addStockToPortfolio = async ({
-    portfolioId,
-    stock,
-    quantity,
-    purchasePrice,
-  }) => {
-    try {
-      const stockDto = { stock, quantity, purchasePrice };
-      await portfolioService.addStockToPortfolio(portfolioId, stockDto);
-    } catch (err) {
-      setError("Failed to add stock");
-      console.error(err);
-      throw err;
-    }
-  };
-
-  async function addStockWithOptionalPortfolio({
+  // Fixed function - removed unused parameters and unused helper function
+  const addStockWithOptionalPortfolio = async ({
     createNew,
     newPortfolioName,
     selectedPortfolioId,
-    stock,
-    quantity,
-    purchasePrice,
-  }) {
-    if (createNew) {
-      // 1. Create new portfolio and wait for the returned portfolio
-      const newPortfolio = await handleCreatePortfolio({
-        name: newPortfolioName,
-      });
+    stockData,
+  }) => {
+    try {
+      if (createNew) {
+        // 1. Create new portfolio and wait for the returned portfolio
+        const newPortfolio = await handleCreatePortfolio({
+          name: newPortfolioName,
+        });
 
-      // 2. Add stock to the newly created portfolio
-      return addStockToPortfolio({
-        portfolioId: newPortfolio.id,
-        stock,
-        quantity,
-        purchasePrice,
-      });
-    } else {
-      // Just add stock to existing portfolio
-      return addStockToPortfolio({
-        portfolioId: selectedPortfolioId,
-        stock,
-        quantity,
-        purchasePrice,
-      });
+        // 2. Add stock to the newly created portfolio using the stockData directly
+        await portfolioService.addStockToPortfolio(newPortfolio.id, stockData);
+      } else {
+        // Just add stock to existing portfolio using the stockData directly
+        await portfolioService.addStockToPortfolio(selectedPortfolioId, stockData);
+      }
+
+      // Refresh portfolios after adding stock
+      const updated = await portfolioService.getUserPortfolios();
+      setPortfolios(updated);
+    } catch (err) {
+      setError("Failed to add stock to portfolio");
+      console.error(err);
+      throw err; // Re-throw so the modal can handle it
     }
-  }
+  };
 
   // Modal Management
   const openAddStockModal = useCallback((stockData = null) => {

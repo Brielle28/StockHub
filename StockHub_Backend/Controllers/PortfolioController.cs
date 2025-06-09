@@ -18,16 +18,13 @@ namespace StockHub_Backend.Controllers
     public class PortfoliosController : ControllerBase
     {
         private readonly UserManager<AppUser> _userManager;
-        private readonly IStockRepository _stockRepository;
         private readonly IPortfolioRepository _portfolioRepository;
 
         public PortfoliosController(
-            UserManager<AppUser> userManager, 
-            IStockRepository stockRepository, 
+            UserManager<AppUser> userManager,
             IPortfolioRepository portfolioRepository)
         {
             _userManager = userManager;
-            _stockRepository = stockRepository;
             _portfolioRepository = portfolioRepository;
         }
 
@@ -37,12 +34,12 @@ namespace StockHub_Backend.Controllers
         {
             var username = User.GetUsername();
             var user = await _userManager.FindByNameAsync(username);
-            
+
             if (user == null)
             {
                 return Unauthorized();
             }
-            
+
             var portfolios = await _portfolioRepository.GetUserPortfolios(user);
             return Ok(portfolios);
         }
@@ -53,19 +50,19 @@ namespace StockHub_Backend.Controllers
         {
             var username = User.GetUsername();
             var user = await _userManager.FindByNameAsync(username);
-            
+
             if (user == null)
             {
                 return Unauthorized();
             }
 
             var portfolio = await _portfolioRepository.GetPortfolioById(id, user.Id);
-            
+
             if (portfolio == null)
             {
                 return NotFound("Portfolio not found");
             }
-            
+
             return Ok(portfolio);
         }
 
@@ -75,7 +72,7 @@ namespace StockHub_Backend.Controllers
         {
             var username = User.GetUsername();
             var user = await _userManager.FindByNameAsync(username);
-            
+
             if (user == null)
             {
                 return Unauthorized();
@@ -91,12 +88,12 @@ namespace StockHub_Backend.Controllers
             };
 
             var createdPortfolio = await _portfolioRepository.CreatePortfolio(portfolio);
-            
+
             if (createdPortfolio == null)
             {
                 return StatusCode(500, "Failed to create portfolio");
             }
-            
+
             return CreatedAtAction(nameof(GetPortfolio), new { id = createdPortfolio.Id }, null);
         }
 
@@ -106,14 +103,14 @@ namespace StockHub_Backend.Controllers
         {
             var username = User.GetUsername();
             var user = await _userManager.FindByNameAsync(username);
-            
+
             if (user == null)
             {
                 return Unauthorized();
             }
 
             var portfolio = await _portfolioRepository.GetPortfolioById(id, user.Id);
-            
+
             if (portfolio == null)
             {
                 return NotFound("Portfolio not found");
@@ -130,12 +127,12 @@ namespace StockHub_Backend.Controllers
             };
 
             var result = await _portfolioRepository.UpdatePortfolio(portfolioToUpdate);
-            
+
             if (!result)
             {
                 return StatusCode(500, "Failed to update portfolio");
             }
-            
+
             return NoContent();
         }
 
@@ -145,77 +142,80 @@ namespace StockHub_Backend.Controllers
         {
             var username = User.GetUsername();
             var user = await _userManager.FindByNameAsync(username);
-            
+
             if (user == null)
             {
                 return Unauthorized();
             }
 
             var result = await _portfolioRepository.DeletePortfolio(id, user.Id);
-            
+
             if (!result)
             {
                 return NotFound("Portfolio not found");
             }
-            
+
             return NoContent();
         }
 
-        // POST: api/portfolios/{id}/stocks
         [HttpPost("{id}/stocks")]
         public async Task<IActionResult> AddStockToPortfolio(int id, AddStockToPortfolioDto stockDto)
         {
-            var username = User.GetUsername();
-            var user = await _userManager.FindByNameAsync(username);
-            
-            if (user == null)
+            try
             {
-                return Unauthorized();
-            }
+                var username = User.GetUsername();
+                Console.WriteLine($"Username: {username}");
 
-            // Check if portfolio exists and belongs to the user
-            if (!await _portfolioRepository.UserOwnsPortfolio(id, user.Id))
-            {
-                return NotFound("Portfolio not found");
-            }
+                var user = await _userManager.FindByNameAsync(username);
+                Console.WriteLine($"User found: {user != null}");
 
-            // Check if stock exists
-            var stockExists = await _stockRepository.StockExists(stockDto.Symbol);
-            
-            if (!stockExists)
-            {
-                return NotFound($"Stock with symbol {stockDto.Symbol} not found");
-            }
+                if (user == null)
+                {
+                    return Unauthorized();
+                }
 
-            var addedStock = await _portfolioRepository.AddStockToPortfolio(id, stockDto, user);
-            
-            if (addedStock == null)
-            {
-                return StatusCode(500, "Failed to add stock to portfolio");
+                Console.WriteLine($"Checking portfolio ownership for ID: {id}");
+                if (!await _portfolioRepository.UserOwnsPortfolio(id, user.Id))
+                {
+                    return NotFound("Portfolio not found");
+                }
+
+                Console.WriteLine($"Adding stock: {stockDto.Symbol}, Quantity: {stockDto.Quantity}");
+                var addedStock = await _portfolioRepository.AddStockToPortfolio(id, stockDto, user);
+
+                if (addedStock == null)
+                {
+                    return StatusCode(500, "Failed to add stock to portfolio");
+                }
+
+                return CreatedAtAction(nameof(GetPortfolio), new { id }, addedStock);
             }
-            
-            return CreatedAtAction(nameof(GetPortfolio), new { id }, addedStock);
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in AddStockToPortfolio: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                return StatusCode(500, new { error = ex.Message, stackTrace = ex.StackTrace });
+            }
         }
-
         // DELETE: api/portfolios/{id}/stocks/{stockId}
         [HttpDelete("{id}/stocks/{stockId}")]
         public async Task<IActionResult> RemoveStockFromPortfolio(int id, int stockId)
         {
             var username = User.GetUsername();
             var user = await _userManager.FindByNameAsync(username);
-            
+
             if (user == null)
             {
                 return Unauthorized();
             }
 
             var result = await _portfolioRepository.RemoveStockFromPortfolio(id, stockId, user.Id);
-            
+
             if (!result)
             {
                 return NotFound("Stock not found in portfolio");
             }
-            
+
             return NoContent();
         }
 
@@ -225,7 +225,7 @@ namespace StockHub_Backend.Controllers
         {
             var username = User.GetUsername();
             var user = await _userManager.FindByNameAsync(username);
-            
+
             if (user == null)
             {
                 return Unauthorized();

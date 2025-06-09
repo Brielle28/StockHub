@@ -1,8 +1,9 @@
 import { FaBars, FaBell } from "react-icons/fa";
 import { useAuth } from "../../Context/AuthContext";
+import { Link } from "react-router-dom";
 
 const Navbar = ({ toggleSidebar }) => {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
 
   return (
     <header className="bg-[#0a0a0a] border-b border-gray-800 sticky top-0 z-20">
@@ -29,9 +30,11 @@ const Navbar = ({ toggleSidebar }) => {
         <div className="flex-1"></div>
 
         {/* Bell icon */}
-        <button className="p-2 rounded-full bg-[#111111] text-gray-400 hover:text-white focus:outline-none focus:ring-1 focus:ring-gray-600">
-          <FaBell />
-        </button>
+        <Link to="/dashboard/notifications">
+          <button className="p-2 rounded-full bg-[#111111] text-gray-400 hover:text-white focus:outline-none focus:ring-1 focus:ring-gray-600">
+            <FaBell />
+          </button>
+        </Link>
       </div>
     </header>
   );

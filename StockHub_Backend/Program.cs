@@ -19,6 +19,8 @@ using StockHub_Backend.Services.YahooFinanceApiService;
 using StockHub_Backend.Services.Kafka.YahooStockData;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
+using StockHub_Backend.Services.Kafka.PortfolioKafka;
+// using StockHub_Backend.I;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -299,8 +301,38 @@ if (app.Environment.IsDevelopment())
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "StockHub API V1");
     });
 }
-
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+    app.UseExceptionHandler("/error-development");
+    // app.UseDeveloperExceptionPage();
+}
+else
+{
+    app.UseExceptionHandler("/error");
+}
 // Global exception handling middleware
+// app.UseExceptionHandler(errorApp =>
+// {
+//     errorApp.Run(async context =>
+//     {
+//         context.Response.StatusCode = 500;
+//         context.Response.ContentType = "application/json";
+
+//         var error = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+//         if (error != null)
+//         {
+//             var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+//             logger.LogError(error.Error, "Unhandled exception occurred");
+
+//             await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(new
+//             {
+//                 error = "An internal server error occurred",
+//                 timestamp = DateTime.UtcNow
+//             }));
+//         }
+//     });
+// });
 app.UseExceptionHandler(errorApp =>
 {
     errorApp.Run(async context =>
@@ -312,17 +344,24 @@ app.UseExceptionHandler(errorApp =>
         if (error != null)
         {
             var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-            logger.LogError(error.Error, "Unhandled exception occurred");
 
-            await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(new
+            // Log the full exception with inner exceptions
+            logger.LogError(error.Error, "Unhandled exception occurred: {Message}", error.Error.Message);
+
+            // Build a detailed error response
+            var response = new
             {
                 error = "An internal server error occurred",
+                message = error.Error.Message,
+                innerMessage = error.Error.InnerException?.Message,
+                innerStackTrace = error.Error.InnerException?.StackTrace,
                 timestamp = DateTime.UtcNow
-            }));
+            };
+
+            await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(response));
         }
     });
 });
-
 // Configure middleware pipeline in correct order
 app.UseRateLimiter();           // Rate limiting must come early
 // app.UseHttpsRedirection();      // Force HTTPS

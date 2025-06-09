@@ -1,13 +1,51 @@
-import { useState } from "react";
-import { mockAllocationData, mockPerformanceData, mockStocks } from "../../../Utils/PorfolioMockUp";
-import { Line } from 'recharts';
-import { PieChart, Pie, Cell, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { useState, useEffect } from "react";
+import { PieChart, Pie, Cell, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, Line } from 'recharts';
 import { FiPlus, FiTrash2 } from 'react-icons/fi';
+import { useSharedPortfolio } from "../../../Context/PortfolioContext";
+import * as portfolioService from "../../../Services/portfolioService";
 
 const PortfolioDetails = ({ portfolio, onShowAddStock }) => {
-  // Settings for charts display
-  const [chartType, setChartType] = useState('pie');
+  const [portfolioStocks, setPortfolioStocks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   
+  const { handleRemoveStock, formatCurrency, formatChange } = useSharedPortfolio();
+
+  // Fetch portfolio stocks when portfolio changes
+  useEffect(() => {
+    const fetchPortfolioStocks = async () => {
+      if (!portfolio?.id) return;
+      
+      setLoading(true);
+      try {
+        const stocks = await portfolioService.getPortfolioStocks(portfolio.id);
+        setPortfolioStocks(stocks || []);
+        setError(null);
+      } catch (err) {
+        console.error('Failed to fetch portfolio stocks:', err);
+        setError('Failed to load portfolio stocks');
+        setPortfolioStocks([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPortfolioStocks();
+  }, [portfolio?.id]);
+
+  const handleDeleteStock = async (stockId) => {
+    if (!portfolio?.id || !stockId) return;
+    
+    try {
+      await handleRemoveStock(portfolio.id, stockId);
+      // Refresh the stocks list
+      const updatedStocks = await portfolioService.getPortfolioStocks(portfolio.id);
+      setPortfolioStocks(updatedStocks || []);
+    } catch (err) {
+      console.error('Failed to delete stock:', err);
+    }
+  };
+
   return (
     <div className="bg-[#111111] rounded-xl p-6 shadow-xl">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-6">
@@ -16,19 +54,15 @@ const PortfolioDetails = ({ portfolio, onShowAddStock }) => {
           <p className="text-gray-500">{portfolio.description}</p>
         </div>
         <div className="mt-4 lg:mt-0 flex flex-col lg:items-end">
-          <div className="text-2xl font-bold text-gray-300">${portfolio.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-          <div className={`flex items-center ${portfolio.dailyChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-            <span>
-              {portfolio.dailyChange >= 0 ? '+' : ''}{portfolio.dailyChange.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (
-              {portfolio.dailyChangePercent >= 0 ? '+' : ''}{portfolio.dailyChangePercent.toFixed(2)}%)
-            </span>
+          <div className="text-2xl font-bold text-gray-300">
+            {formatCurrency(portfolio.value)}
+          </div>
+          <div className={`flex items-center ${(portfolio.dailyChange || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+            <span>{formatChange(portfolio.dailyChange, portfolio.dailyChangePercent)}</span>
             <span className="text-gray-500 ml-2">Today</span>
           </div>
-          <div className={`flex items-center ${portfolio.totalGainLoss >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-            <span>
-              {portfolio.totalGainLoss >= 0 ? '+' : ''}{portfolio.totalGainLoss.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (
-              {portfolio.totalGainLossPercent >= 0 ? '+' : ''}{portfolio.totalGainLossPercent.toFixed(2)}%)
-            </span>
+          <div className={`flex items-center ${(portfolio.totalGainLoss || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+            <span>{formatChange(portfolio.totalGainLoss, portfolio.totalGainLossPercent)}</span>
             <span className="text-gray-500 ml-2">Total</span>
           </div>
         </div>
@@ -42,181 +76,77 @@ const PortfolioDetails = ({ portfolio, onShowAddStock }) => {
           <FiPlus className="mr-2" /> Add Stock
         </button>
       </div>
-
-      <div className="mb-8 space-y-6">
-        {/* Performance Chart - Full width with horizontal scrolling on mobile */}
-        <div className="bg-[#111111] rounded-xl p-4 border border-gray-800">
-          <h3 className="text-lg font-semibold text-gray-300 mb-4">Performance History</h3>
-          <div className="overflow-x-auto">
-            <div className="min-w-[800px]">
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={mockPerformanceData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                    <XAxis dataKey="date" stroke="#666" />
-                    <YAxis stroke="#666" />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#222', borderColor: '#444' }}
-                      formatter={(value) => [`${value.toLocaleString()}`, 'Value']}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="value" 
-                      stroke="#d4fb2b" 
-                      strokeWidth={2}
-                      dot={{ fill: '#d4fb2b', r: 4 }}
-                      activeDot={{ r: 6, fill: '#d4fb2b' }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Two charts side by side with proper scrolling */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Allocation Data with horizontal scrolling */}
-          <div className="bg-[#111111] rounded-xl p-4 border border-gray-800">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-300">Allocation</h3>
-              <div className="flex gap-2">
-                <button 
-                  className={`px-3 py-1 rounded ${chartType === 'pie' ? 'bg-[#d4fb2b] text-black' : 'bg-gray-800 text-gray-300'}`}
-                  onClick={() => setChartType('pie')}
-                >
-                  Pie
-                </button>
-                <button 
-                  className={`px-3 py-1 rounded ${chartType === 'bar' ? 'bg-[#d4fb2b] text-black' : 'bg-gray-800 text-gray-300'}`}
-                  onClick={() => setChartType('bar')}
-                >
-                  Bar
-                </button>
-              </div>
-            </div>
-            <div className="overflow-x-auto">
-              <div className="min-w-[400px]">
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    {chartType === 'pie' ? (
-                      <PieChart>
-                        <Pie
-                          data={mockAllocationData}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          outerRadius={100}
-                          fill="#8884d8"
-                          dataKey="value"
-                          nameKey="name"
-                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        >
-                          {mockAllocationData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip 
-                          formatter={(value) => [`${value.toLocaleString()}`, 'Value']}
-                          contentStyle={{ backgroundColor: '#222', borderColor: '#444' }}
-                        />
-                        <Legend formatter={(value) => <span style={{ color: '#d1d5db' }}>{value}</span>} />
-                      </PieChart>
-                    ) : (
-                      <BarChart data={mockAllocationData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                        <XAxis dataKey="name" stroke="#666" />
-                        <YAxis stroke="#666" />
-                        <Tooltip 
-                          contentStyle={{ backgroundColor: '#222', borderColor: '#444' }}
-                          formatter={(value) => [`${value.toLocaleString()}`, 'Value']}
-                        />
-                        <Bar dataKey="value" name="Value">
-                          {mockAllocationData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Bar>
-                        <Legend formatter={(value) => <span style={{ color: '#d1d5db' }}>{value}</span>} />
-                      </BarChart>
-                    )}
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-            {/* Scroll indicator for mobile */}
-            <div className="lg:hidden flex justify-center mt-2">
-              <div className="h-1 w-16 bg-gray-600 rounded-full opacity-75"></div>
-            </div>
-          </div>
-
-          {/* Top Performing Stocks */}
-          <div className="bg-[#111111] rounded-xl p-4 border border-gray-800">
-            <h3 className="text-lg font-semibold text-gray-300 mb-4">Top Performers</h3>
-            <div className="space-y-4">
-              {mockStocks
-                .sort((a, b) => b.gainLossPercent - a.gainLossPercent)
-                .slice(0, 3)
-                .map(stock => (
-                  <div key={stock.id} className="flex justify-between items-center p-3 bg-gray-800 rounded-lg">
-                    <div>
-                      <div className="text-lg font-semibold text-[#d4fb2b]">{stock.symbol}</div>
-                      <div className="text-sm text-gray-400">{stock.name}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className={`text-lg font-semibold ${stock.gainLoss >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                        {stock.gainLossPercent.toFixed(2)}%
-                      </div>
-                      <div className={`text-sm ${stock.gainLoss >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        ${stock.gainLoss.toFixed(2)}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
+      {/* Holdings Table */}
       <div className="bg-[#111111] rounded-xl overflow-hidden border border-gray-800">
         <h3 className="text-lg font-semibold text-gray-300 p-4 border-b border-gray-700">Holdings</h3>
         <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead className="bg-gray-900">
-              <tr>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Symbol</th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Name</th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Quantity</th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Avg Cost</th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Current Price</th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Market Value</th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Gain/Loss</th>
-                <th className="py-3 px-4 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-700">
-              {mockStocks.map((stock) => (
-                <tr key={stock.id} className="hover:bg-gray-800">
-                  <td className="py-4 px-4 text-sm font-medium text-[#d4fb2b]">{stock.symbol}</td>
-                  <td className="py-4 px-4 text-sm text-gray-300">{stock.name}</td>
-                  <td className="py-4 px-4 text-sm text-gray-300">{stock.quantity}</td>
-                  <td className="py-4 px-4 text-sm text-gray-300">${stock.purchasePrice.toFixed(2)}</td>
-                  <td className="py-4 px-4 text-sm text-gray-300">${stock.currentPrice.toFixed(2)}</td>
-                  <td className="py-4 px-4 text-sm text-gray-300">${stock.currentValue.toFixed(2)}</td>
-                  <td className={`py-4 px-4 text-sm ${stock.gainLoss >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    ${stock.gainLoss.toFixed(2)} ({stock.gainLossPercent.toFixed(2)}%)
-                  </td>
-                  <td className="py-4 px-4 text-sm text-right">
-                    <button className="text-gray-400 hover:text-red-500 ml-2">
-                      <FiTrash2 size={18} />
-                    </button>
-                  </td>
+          {loading ? (
+            <div className="p-8 text-center text-gray-500">
+              Loading stocks...
+            </div>
+          ) : error ? (
+            <div className="p-8 text-center text-red-500">
+              {error}
+            </div>
+          ) : portfolioStocks.length > 0 ? (
+            <table className="min-w-full">
+              <thead className="bg-gray-900">
+                <tr>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Symbol</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Name</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Quantity</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Avg Cost</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Current Price</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Market Value</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Gain/Loss</th>
+                  <th className="py-3 px-4 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-700">
+                {portfolioStocks.map((stock) => (
+                  <tr key={stock.id} className="hover:bg-gray-800">
+                    <td className="py-4 px-4 text-sm font-medium text-[#d4fb2b]">
+                      {stock.symbol || stock.stock?.symbol}
+                    </td>
+                    <td className="py-4 px-4 text-sm text-gray-300">
+                      {stock.name || stock.stock?.name}
+                    </td>
+                    <td className="py-4 px-4 text-sm text-gray-300">
+                      {stock.quantity || 0}
+                    </td>
+                    <td className="py-4 px-4 text-sm text-gray-300">
+                      ${(stock.purchasePrice || 0).toFixed(2)}
+                    </td>
+                    <td className="py-4 px-4 text-sm text-gray-300">
+                      ${(stock.currentPrice || 0).toFixed(2)}
+                    </td>
+                    <td className="py-4 px-4 text-sm text-gray-300">
+                      ${(stock.currentValue || (stock.quantity * stock.currentPrice) || 0).toFixed(2)}
+                    </td>
+                    <td className={`py-4 px-4 text-sm ${(stock.gainLoss || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      ${(stock.gainLoss || 0).toFixed(2)} ({(stock.gainLossPercent || 0).toFixed(2)}%)
+                    </td>
+                    <td className="py-4 px-4 text-sm text-right">
+                      <button 
+                        className="text-gray-400 hover:text-red-500 ml-2"
+                        onClick={() => handleDeleteStock(stock.id)}
+                      >
+                        <FiTrash2 size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div className="p-8 text-center text-gray-500">
+              No stocks in this portfolio. Click "Add Stock" to get started.
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 };
-export default PortfolioDetails
+
+export default PortfolioDetails;

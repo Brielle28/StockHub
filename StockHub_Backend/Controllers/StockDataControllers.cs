@@ -155,7 +155,7 @@ namespace StockHub_Backend.Controllers
 
             try
             {
-                var news = await _stockDataService.GetStockNewsAsync(request.Symbol, request.Limit, request.Offset);
+                var news = await _stockDataService.GetStockNewsAsync(request.Symbol);
                 var dtos = news.Select(n => n.ToDto()).ToList();
 
                 _logger.LogInformation("Retrieved {Count} news articles for symbol: {Symbol}",

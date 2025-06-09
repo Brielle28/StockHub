@@ -1,5 +1,4 @@
 import { useState } from "react";
-
 const AddStockModal = ({ isOpen, onClose, onAdd, portfolioId, stockData }) => {
   const [symbol, setSymbol] = useState(stockData?.symbol || "");
   const [quantity, setQuantity] = useState(1);
@@ -14,14 +13,14 @@ const AddStockModal = ({ isOpen, onClose, onAdd, portfolioId, stockData }) => {
 
   const handleSubmit = () => {
     const stockToAdd = {
-      symbol: symbol.toUpperCase(),
-      quantity: parseInt(quantity),
+      symbol: symbol.toLowerCase(), 
+      quantity: parseFloat(quantity), 
       purchasePrice: parseFloat(purchasePrice),
-      purchaseDate,
-      portfolioId,
-      stockData,
+      purchaseDate: new Date(purchaseDate).toISOString(), 
+      currentPrice: stockData?.currentPrice || parseFloat(purchasePrice), 
+      previousClose: stockData?.previousClose || parseFloat(purchasePrice) 
     };
-    onAdd(stockToAdd);
+    onAdd(portfolioId, stockToAdd);
     onClose();
   };
 
@@ -37,8 +36,8 @@ const AddStockModal = ({ isOpen, onClose, onAdd, portfolioId, stockData }) => {
           <input
             className="w-full bg-[#111111] bg-opacity-70 border border-gray-700 rounded-lg p-2 text-gray-300"
             value={symbol}
-            onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-            placeholder="AAPL, MSFT, etc."
+            onChange={(e) => setSymbol(e.target.value.toLowerCase())}
+            placeholder="aapl, msft, etc."
             disabled={!!stockData}
           />
         </div>
@@ -48,7 +47,8 @@ const AddStockModal = ({ isOpen, onClose, onAdd, portfolioId, stockData }) => {
           <input
             className="w-full bg-[#111111] bg-opacity-70 border border-gray-700 rounded-lg p-2 text-gray-300"
             type="number"
-            min="1"
+            step="0.0001"
+            min="0.0001"
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
           />
@@ -96,4 +96,5 @@ const AddStockModal = ({ isOpen, onClose, onAdd, portfolioId, stockData }) => {
     </div>
   );
 };
-export default AddStockModal
+
+export default AddStockModal;

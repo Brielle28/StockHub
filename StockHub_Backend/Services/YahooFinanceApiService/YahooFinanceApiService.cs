@@ -97,27 +97,7 @@ namespace StockHub_Backend.Services.YahooFinanceApiService
             }
         }
 
-        // public async Task<YahooHistoryResponseDto?> GetHistoricalDataAsync(string symbol, string range, string interval)
-        // {
-        //     try
-        //     {
-        //         var response = await _httpClient.GetAsync($"/stock/v3/get-historical-data?symbol={symbol}&region=US&range={range}&interval={interval}");
 
-        //         if (!response.IsSuccessStatusCode)
-        //         {
-        //             _logger.LogWarning("Failed to get history for {Symbol}. Status: {Status}", symbol, response.StatusCode);
-        //             return null;
-        //         }
-
-        //         var content = await response.Content.ReadAsStringAsync();
-        //         return JsonSerializer.Deserialize<YahooHistoryResponseDto>(content, _jsonOptions);
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         _logger.LogError(ex, "Error getting history for symbol: {Symbol}", symbol);
-        //         return null;
-        //     }
-        // }
 
         public async Task<List<StockSearchResult>> SearchStocksAsync(string query, int limit)
         {
@@ -224,7 +204,47 @@ namespace StockHub_Backend.Services.YahooFinanceApiService
             }
         }
 
-        public async Task<List<StockNews>> GetNewsAsync(string? symbol, int limit, int offset)
+        // public async Task<List<StockNews>> GetNewsAsync(string symbol)
+        // {
+        //     try
+        //     {
+        //         // Build the new URL with query parameters - symbol is required, not optional
+        //         var url = $"https://yahoo-finance15.p.rapidapi.com/api/v2/markets/news?tickers={symbol}&type=ALL";
+
+        //         // Create HttpRequestMessage with manual headers
+        //         using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        //         request.Headers.Add("x-rapidapi-key", "01207e2cb8msh4b75aa4c2667ea4p1f2a3djsn30f71919bb7a");
+        //         request.Headers.Add("x-rapidapi-host", "yahoo-finance15.p.rapidapi.com");
+
+        //         var response = await _httpClient.SendAsync(request);
+
+        //         if (!response.IsSuccessStatusCode)
+        //         {
+        //             _logger.LogWarning("Failed to get news. Status: {Status}", response.StatusCode);
+        //             return new List<StockNews>();
+        //         }
+
+        //         var content = await response.Content.ReadAsStringAsync();
+        //         var newsResponse = JsonSerializer.Deserialize<YahooNewsResponseDto>(content, _jsonOptions);
+
+        //         return newsResponse?.Items?.Select(item => new StockNews
+        //         {
+        //             Title = item.Title ?? "",
+        //             Summary = item.Summary ?? "",
+        //             Url = item.Link ?? "",
+        //             Source = item.Publisher ?? "",
+        //             PublishedAt = DateTimeOffset.FromUnixTimeSeconds(item.ProviderPublishTime ?? 0).DateTime,
+        //             ImageUrl = item.Thumbnail?.Resolutions?.FirstOrDefault()?.Url ?? "",
+        //             RelatedSymbols = item.RelatedTickers ?? new List<string>()
+        //         }).ToList() ?? new List<StockNews>();
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         _logger.LogError(ex, "Error getting news for symbol: {Symbol}", symbol);
+        //         return new List<StockNews>();
+        //     }
+        // }
+        public async Task<List<StockNews>> GetNewsAsync(string symbol)
         {
             try
             {
@@ -237,7 +257,6 @@ namespace StockHub_Backend.Services.YahooFinanceApiService
                 request.Headers.Add("x-rapidapi-host", "yahoo-finance15.p.rapidapi.com");
 
                 var response = await _httpClient.SendAsync(request);
-
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogWarning("Failed to get news. Status: {Status}", response.StatusCode);
@@ -247,15 +266,16 @@ namespace StockHub_Backend.Services.YahooFinanceApiService
                 var content = await response.Content.ReadAsStringAsync();
                 var newsResponse = JsonSerializer.Deserialize<YahooNewsResponseDto>(content, _jsonOptions);
 
-                return newsResponse?.Items?.Select(item => new StockNews
+                // Map from new DTO structure to StockNews
+                return newsResponse?.Body?.Select(item => new StockNews
                 {
                     Title = item.Title ?? "",
-                    Summary = item.Summary ?? "",
-                    Url = item.Link ?? "",
-                    Source = item.Publisher ?? "",
-                    PublishedAt = DateTimeOffset.FromUnixTimeSeconds(item.ProviderPublishTime ?? 0).DateTime,
-                    ImageUrl = item.Thumbnail?.Resolutions?.FirstOrDefault()?.Url ?? "",
-                    RelatedSymbols = item.RelatedTickers ?? new List<string>()
+                    Summary = item.Text ?? "",
+                    Url = item.Url ?? "",
+                    Source = item.Source ?? "",
+                    PublishedAt = ParseTimeToDateTime(item.Time, item.Ago),
+                    ImageUrl = item.Img ?? "",
+                    RelatedSymbols = item.Tickers ?? new List<string>()
                 }).ToList() ?? new List<StockNews>();
             }
             catch (Exception ex)
@@ -264,7 +284,54 @@ namespace StockHub_Backend.Services.YahooFinanceApiService
                 return new List<StockNews>();
             }
         }
+
+        private DateTime ParseTimeToDateTime(string? time, string? ago)
+        {
+            // Handle the time parsing based on the format you receive
+            // This is a basic implementation - you may need to adjust based on actual format
+            if (!string.IsNullOrEmpty(time))
+            {
+                // Try to parse the time string directly
+                if (DateTime.TryParse(time, out var parsedTime))
+                {
+                    return parsedTime;
+                }
+            }
+
+            // If time parsing fails, try to use 'ago' field to calculate approximate time
+            if (!string.IsNullOrEmpty(ago))
+            {
+                // Parse strings like "2 hours ago", "1 day ago", etc.
+                // This is a simplified implementation - adjust based on actual format
+                var now = DateTime.UtcNow;
+                if (ago.Contains("hour"))
+                {
+                    var hours = ExtractNumber(ago);
+                    return now.AddHours(-hours);
+                }
+                if (ago.Contains("day"))
+                {
+                    var days = ExtractNumber(ago);
+                    return now.AddDays(-days);
+                }
+                if (ago.Contains("minute"))
+                {
+                    var minutes = ExtractNumber(ago);
+                    return now.AddMinutes(-minutes);
+                }
+            }
+
+            // Default to current time if parsing fails
+            return DateTime.UtcNow;
+        }
+
+        private int ExtractNumber(string text)
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(text, @"\d+");
+            return match.Success ? int.Parse(match.Value) : 0;
+        }
     }
+
 
     public class YahooSearchResponseDto
     {
@@ -281,31 +348,57 @@ namespace StockHub_Backend.Services.YahooFinanceApiService
         public string? Region { get; set; }
     }
 
+    // public class YahooNewsResponseDto
+    // {
+    //     public List<YahooNewsItemDto> Items { get; set; } = new();
+    // }
+
+    // public class YahooNewsItemDto
+    // {
+    //     public string? Title { get; set; }
+    //     public string? Summary { get; set; }
+    //     public string? Link { get; set; }
+    //     public string? Publisher { get; set; }
+    //     public long? ProviderPublishTime { get; set; }
+    //     public YahooNewsThumbnailDto? Thumbnail { get; set; }
+    //     public List<string> RelatedTickers { get; set; } = new();
+    // }
+
+    // public class YahooNewsThumbnailDto
+    // {
+    //     public List<YahooNewsImageDto> Resolutions { get; set; } = new();
+    // }
+
+    // public class YahooNewsImageDto
+    // {
+    //     public string? Url { get; set; }
+    //     public int Width { get; set; }
+    //     public int Height { get; set; }
+    // }
     public class YahooNewsResponseDto
     {
-        public List<YahooNewsItemDto> Items { get; set; } = new();
+        public MetaData? Meta { get; set; }
+        public List<NewsItem>? Body { get; set; }
     }
 
-    public class YahooNewsItemDto
+    public class MetaData
     {
-        public string? Title { get; set; }
-        public string? Summary { get; set; }
-        public string? Link { get; set; }
-        public string? Publisher { get; set; }
-        public long? ProviderPublishTime { get; set; }
-        public YahooNewsThumbnailDto? Thumbnail { get; set; }
-        public List<string> RelatedTickers { get; set; } = new();
+        public string? Version { get; set; }
+        public int Status { get; set; }
+        public string? Copywrite { get; set; }
+        public int Total { get; set; }
     }
 
-    public class YahooNewsThumbnailDto
-    {
-        public List<YahooNewsImageDto> Resolutions { get; set; } = new();
-    }
-
-    public class YahooNewsImageDto
+    public class NewsItem
     {
         public string? Url { get; set; }
-        public int Width { get; set; }
-        public int Height { get; set; }
+        public string? Img { get; set; }
+        public string? Title { get; set; }
+        public string? Text { get; set; }
+        public string? Source { get; set; }
+        public string? Type { get; set; }
+        public List<string>? Tickers { get; set; }
+        public string? Time { get; set; }
+        public string? Ago { get; set; }
     }
 }

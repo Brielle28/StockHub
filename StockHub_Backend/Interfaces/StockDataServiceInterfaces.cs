@@ -14,7 +14,7 @@ namespace StockHub_Backend.Interfaces
         Task<List<StockQuote>> GetStockPricesAsync(List<string> symbols);
         Task<StockQuote?> GetStockQuoteAsync(string symbol);
         Task<StockHistory?> GetStockHistoryAsync(string symbol, string range, string interval = "1d");
-        Task<List<StockNews>> GetStockNewsAsync(string? symbol = null, int limit = 20, int offset = 0);
+        Task<List<StockNews>> GetStockNewsAsync(string symbol);
     }
 
     public interface IStockDataCacheService
@@ -39,7 +39,7 @@ namespace StockHub_Backend.Interfaces
         Task<YahooQuoteResponseDto?> GetQuotesAsync(List<string> symbols);
         Task<YahooHistoryResponseDto?> GetHistoricalDataAsync(string symbol, string range, string interval);
         Task<List<StockSearchResult>> SearchStocksAsync(string query, int limit);
-        Task<List<StockNews>> GetNewsAsync(string? symbol, int limit, int offset);
+        Task<List<StockNews>> GetNewsAsync(string symbol);
     }
 
     public interface IStockPriceHub

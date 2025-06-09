@@ -8,16 +8,8 @@ const CreatePortfolioModal = ({ isOpen, onClose, onCreate }) => {
 
   const handleSubmit = () => {
     const newPortfolio = {
-      id: Date.now().toString(),
       name,
       description,
-      value: 0,
-      dailyChange: 0,
-      dailyChangePercent: 0,
-      stockCount: 0,
-      totalGainLoss: 0,
-      totalGainLossPercent: 0,
-      createdAt: new Date().toISOString(),
     };
     onCreate(newPortfolio);
     setName("");

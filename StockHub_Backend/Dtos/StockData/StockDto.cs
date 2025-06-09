@@ -79,8 +79,6 @@ namespace StockHub_Backend.Dtos.StockData
 
     public class StockHistoryRequestDto
     {
-        [Required]
-        public string Symbol { get; set; } = string.Empty;
 
         [Required]
         public string Range { get; set; } = "1mo"; // 1d, 5d, 1mo, 3mo, 6mo, 1y, 2y, 5y, 10y, ytd, max
@@ -90,9 +88,8 @@ namespace StockHub_Backend.Dtos.StockData
 
     public class StockNewsRequestDto
     {
-        public string? Symbol { get; set; }
-        public int Limit { get; set; } = 20;
-        public int Offset { get; set; } = 0;
+        [Required]
+        public string Symbol { get; set; }
     }
 
     // Yahoo Finance API Response DTOs

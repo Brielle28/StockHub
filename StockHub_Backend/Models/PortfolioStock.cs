@@ -1,39 +1,44 @@
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace StockHub_Backend.Models
 {
-     // New join entity to represent stocks in a portfolio with purchase details
     public class PortfolioStock
     {
         [Key]
         public int Id { get; set; }
-        
+
         [Required]
         public int PortfolioId { get; set; }
-        
+
         [ForeignKey("PortfolioId")]
         public Portfolio Portfolio { get; set; }
-        
+
+        // Store stock information directly without foreign key relationship
         [Required]
-        public int StockId { get; set; }
-        
-        [ForeignKey("StockId")]
-        public Stock Stock { get; set; }
-        
+        [MaxLength(10)]
+        public string Symbol { get; set; }
+
         [Required]
         public decimal Quantity { get; set; }
-        
+
         [Required]
         public decimal PurchasePrice { get; set; }
-        
+
         [Required]
         public DateTime PurchaseDate { get; set; }
-        
+
+        // Optional: Store current price for caching (can be updated separately)
+        public decimal? CurrentPrice { get; set; }
+
+        // Optional: Store additional stock metadata
+        public string? Exchange { get; set; }
+        public string Currency { get; set; } = "USD";
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public decimal? PreviousClose { get; set; }
+
     }
 }
