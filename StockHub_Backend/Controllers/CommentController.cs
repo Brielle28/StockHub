@@ -11,6 +11,7 @@ namespace StockHub_Backend.Controllers
 {
     [Route("StockHub/comment")]
     [ApiController]
+    [ApiExplorerSettings(IgnoreApi = true)] 
     public class CommentController : ControllerBase
     {
         private readonly ICommentRepository _commentRepository;
@@ -77,7 +78,7 @@ namespace StockHub_Backend.Controllers
 
         [HttpDelete]
         [Route("{id}")]
-        public async Task<IActionResult> Delete ([FromRoute] int id)
+        public async Task<IActionResult> Delete([FromRoute] int id)
         {
             var comment = await _commentRepository.DeleteAsync(id);
             if (comment == null)

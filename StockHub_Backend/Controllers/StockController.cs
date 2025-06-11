@@ -11,6 +11,7 @@ namespace StockHub_Backend.Controllers
 {
     [Route("StockHub/stocks")]
     [ApiController]
+    [ApiExplorerSettings(IgnoreApi = true)] 
     public class StockController : ControllerBase
     {
         private readonly IStockRepository _stockRepo;
