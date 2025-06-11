@@ -230,48 +230,6 @@ namespace StockHub_Backend.Repository
             }
         }
 
-        //     public async Task<List<StockNews>> GetStockNewsAsync(string? symbol = null, int limit = 20, int offset = 0)
-        //     {
-        //         var cacheKey = RedisExtensions.CacheKeys.StockNews(symbol);
-
-        //         // Try cache first
-        //         var cachedNews = await _cacheService.GetAsync<List<StockNews>>(cacheKey);
-
-        //         // ✅ FIXED: Only return cache if it has actual data
-        //         if (cachedNews != null && cachedNews.Any())
-        //         {
-        //             _logger.LogInformation("Retrieved news from cache for symbol: {Symbol}", symbol ?? "general");
-        //             return cachedNews.Skip(offset).Take(limit).ToList();
-        //         }
-
-        //         try
-        //         {
-        //             // ✅ FIXED: Log when calling API
-        //             _logger.LogInformation("Cache miss - calling Yahoo Finance API for news: {Symbol}", symbol ?? "general");
-
-        //             // Get from API
-        //             var news = await _yahooApiService.GetNewsAsync(symbol, limit + offset, 0);
-
-        //             // ✅ FIXED: Only cache if we got results
-        //             if (news != null && news.Any())
-        //             {
-        //                 await _cacheService.SetAsync(cacheKey, news, RedisExtensions.CacheTTL.StockNews);
-        //                 _logger.LogInformation("Retrieved and cached {Count} news items for symbol: {Symbol}", news.Count, symbol ?? "general");
-        //             }
-        //             else
-        //             {
-        //                 _logger.LogWarning("No news data returned from Yahoo Finance API for symbol: {Symbol}", symbol ?? "general");
-        //             }
-
-        //             return news?.Skip(offset).Take(limit).ToList() ?? new List<StockNews>();
-        //         }
-        //         catch (Exception ex)
-        //         {
-        //             _logger.LogError(ex, "Error getting news for symbol: {Symbol}", symbol ?? "general");
-        //             return new List<StockNews>();
-        //         }
-        //     }
-        // }
         public async Task<List<StockNews>> GetStockNewsAsync(string? symbol = null)
         {
             var cacheKey = RedisExtensions.CacheKeys.StockNews(symbol);

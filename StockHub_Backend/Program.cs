@@ -20,7 +20,8 @@ using StockHub_Backend.Services.Kafka.YahooStockData;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
 using StockHub_Backend.Services.Kafka.PortfolioKafka;
-// using StockHub_Backend.I;
+using StockHub_Backend.Services.PortfolioStockPriceUpdateService;
+using StockHub_Backend.Services.BackgroundTask;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -153,6 +154,7 @@ builder.Services.AddSingleton<IKafkaProducerService, KafkaProducerService>();
 builder.Services.AddSingleton<IEventPublisher, KafkaEventPublisher>();
 builder.Services.AddSingleton<IPortfolioCacheService, RedisCacheService>();
 builder.Services.AddSingleton<IStockDataCacheService, CacheService>();
+builder.Services.AddScoped<IPortfolioStockPriceUpdateService, PortfolioStockPriceUpdateService>();
 
 // =============================================================================
 // BACKGROUND SERVICES
@@ -160,6 +162,7 @@ builder.Services.AddSingleton<IStockDataCacheService, CacheService>();
 
 // Register Kafka consumer as a background service
 builder.Services.AddHostedService<KafkaConsumerService>();
+builder.Services.AddHostedService<PortfolioStockPriceBackgroundService>();
 
 // =============================================================================
 // SIGNALR CONFIGURATION
@@ -305,34 +308,12 @@ if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
     app.UseExceptionHandler("/error-development");
-    // app.UseDeveloperExceptionPage();
 }
 else
 {
     app.UseExceptionHandler("/error");
 }
 // Global exception handling middleware
-// app.UseExceptionHandler(errorApp =>
-// {
-//     errorApp.Run(async context =>
-//     {
-//         context.Response.StatusCode = 500;
-//         context.Response.ContentType = "application/json";
-
-//         var error = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
-//         if (error != null)
-//         {
-//             var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-//             logger.LogError(error.Error, "Unhandled exception occurred");
-
-//             await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(new
-//             {
-//                 error = "An internal server error occurred",
-//                 timestamp = DateTime.UtcNow
-//             }));
-//         }
-//     });
-// });
 app.UseExceptionHandler(errorApp =>
 {
     errorApp.Run(async context =>

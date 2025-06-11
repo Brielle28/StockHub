@@ -609,6 +609,44 @@ namespace StockHub_Backend.Repositories
             }
         }
 
+        // Add these methods to your existing PortfolioRepository implementation
+        public async Task<List<string>> GetAllPortfolioStockSymbolsAsync()
+        {
+            return await _context.PortfolioStocks
+                .Select(ps => ps.Symbol)
+                .Distinct()
+                .ToListAsync();
+        }
+
+        public async Task<List<PortfolioStock>> GetAllPortfolioStocksAsync()
+        {
+            return await _context.PortfolioStocks
+                .Include(ps => ps.Portfolio)
+                .ToListAsync();
+        }
+
+        public async Task UpdatePortfolioStockPricesAsync(List<PortfolioStockPriceUpdate> updates)
+        {
+            var portfolioStockIds = updates.Select(u => u.PortfolioStockId).ToList();
+            var portfolioStocks = await _context.PortfolioStocks
+                .Where(ps => portfolioStockIds.Contains(ps.Id))
+                .ToListAsync();
+
+            foreach (var update in updates)
+            {
+                var portfolioStock = portfolioStocks.FirstOrDefault(ps => ps.Id == update.PortfolioStockId);
+                if (portfolioStock != null)
+                {
+                    portfolioStock.CurrentPrice = update.CurrentPrice;
+                    portfolioStock.Change = update.Change;
+                    portfolioStock.ChangePercent = update.ChangePercent;
+                    portfolioStock.LastUpdated = update.LastUpdated;
+                    portfolioStock.UpdatedAt = DateTime.UtcNow;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+        }
         // Helper methods
         private async Task InvalidatePortfolioCaches(string userId, int portfolioId)
         {

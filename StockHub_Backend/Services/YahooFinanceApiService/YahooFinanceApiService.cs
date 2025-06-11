@@ -137,43 +137,6 @@ namespace StockHub_Backend.Services.YahooFinanceApiService
                 return new List<StockSearchResult>();
             }
         }
-
-        // public async Task<List<StockNews>> GetNewsAsync(string? symbol, int limit, int offset)
-        // {
-        //     try
-        //     {
-        //         var endpoint = string.IsNullOrEmpty(symbol)
-        //             ? $"/news/list?category=generalnews&region=US"
-        //             : $"/news/list?category={symbol}-news&region=US";
-
-        //         var response = await _httpClient.GetAsync(endpoint);
-
-        //         if (!response.IsSuccessStatusCode)
-        //         {
-        //             _logger.LogWarning("Failed to get news. Status: {Status}", response.StatusCode);
-        //             return new List<StockNews>();
-        //         }
-
-        //         var content = await response.Content.ReadAsStringAsync();
-        //         var newsResponse = JsonSerializer.Deserialize<YahooNewsResponseDto>(content, _jsonOptions);
-
-        //         return newsResponse?.Items?.Select(item => new StockNews
-        //         {
-        //             Title = item.Title ?? "",
-        //             Summary = item.Summary ?? "",
-        //             Url = item.Link ?? "",
-        //             Source = item.Publisher ?? "",
-        //             PublishedAt = DateTimeOffset.FromUnixTimeSeconds(item.ProviderPublishTime ?? 0).DateTime,
-        //             ImageUrl = item.Thumbnail?.Resolutions?.FirstOrDefault()?.Url ?? "",
-        //             RelatedSymbols = item.RelatedTickers ?? new List<string>()
-        //         }).ToList() ?? new List<StockNews>();
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         _logger.LogError(ex, "Error getting news for symbol: {Symbol}", symbol);
-        //         return new List<StockNews>();
-        //     }
-        // }
         public async Task<YahooHistoryResponseDto?> GetHistoricalDataAsync(string symbol, string range, string interval)
         {
             try
@@ -203,47 +166,6 @@ namespace StockHub_Backend.Services.YahooFinanceApiService
                 return null;
             }
         }
-
-        // public async Task<List<StockNews>> GetNewsAsync(string symbol)
-        // {
-        //     try
-        //     {
-        //         // Build the new URL with query parameters - symbol is required, not optional
-        //         var url = $"https://yahoo-finance15.p.rapidapi.com/api/v2/markets/news?tickers={symbol}&type=ALL";
-
-        //         // Create HttpRequestMessage with manual headers
-        //         using var request = new HttpRequestMessage(HttpMethod.Get, url);
-        //         request.Headers.Add("x-rapidapi-key", "01207e2cb8msh4b75aa4c2667ea4p1f2a3djsn30f71919bb7a");
-        //         request.Headers.Add("x-rapidapi-host", "yahoo-finance15.p.rapidapi.com");
-
-        //         var response = await _httpClient.SendAsync(request);
-
-        //         if (!response.IsSuccessStatusCode)
-        //         {
-        //             _logger.LogWarning("Failed to get news. Status: {Status}", response.StatusCode);
-        //             return new List<StockNews>();
-        //         }
-
-        //         var content = await response.Content.ReadAsStringAsync();
-        //         var newsResponse = JsonSerializer.Deserialize<YahooNewsResponseDto>(content, _jsonOptions);
-
-        //         return newsResponse?.Items?.Select(item => new StockNews
-        //         {
-        //             Title = item.Title ?? "",
-        //             Summary = item.Summary ?? "",
-        //             Url = item.Link ?? "",
-        //             Source = item.Publisher ?? "",
-        //             PublishedAt = DateTimeOffset.FromUnixTimeSeconds(item.ProviderPublishTime ?? 0).DateTime,
-        //             ImageUrl = item.Thumbnail?.Resolutions?.FirstOrDefault()?.Url ?? "",
-        //             RelatedSymbols = item.RelatedTickers ?? new List<string>()
-        //         }).ToList() ?? new List<StockNews>();
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         _logger.LogError(ex, "Error getting news for symbol: {Symbol}", symbol);
-        //         return new List<StockNews>();
-        //     }
-        // }
         public async Task<List<StockNews>> GetNewsAsync(string symbol)
         {
             try
@@ -348,33 +270,6 @@ namespace StockHub_Backend.Services.YahooFinanceApiService
         public string? Region { get; set; }
     }
 
-    // public class YahooNewsResponseDto
-    // {
-    //     public List<YahooNewsItemDto> Items { get; set; } = new();
-    // }
-
-    // public class YahooNewsItemDto
-    // {
-    //     public string? Title { get; set; }
-    //     public string? Summary { get; set; }
-    //     public string? Link { get; set; }
-    //     public string? Publisher { get; set; }
-    //     public long? ProviderPublishTime { get; set; }
-    //     public YahooNewsThumbnailDto? Thumbnail { get; set; }
-    //     public List<string> RelatedTickers { get; set; } = new();
-    // }
-
-    // public class YahooNewsThumbnailDto
-    // {
-    //     public List<YahooNewsImageDto> Resolutions { get; set; } = new();
-    // }
-
-    // public class YahooNewsImageDto
-    // {
-    //     public string? Url { get; set; }
-    //     public int Width { get; set; }
-    //     public int Height { get; set; }
-    // }
     public class YahooNewsResponseDto
     {
         public MetaData? Meta { get; set; }

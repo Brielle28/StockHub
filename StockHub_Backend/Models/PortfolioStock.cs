@@ -31,6 +31,9 @@ namespace StockHub_Backend.Models
 
         // Optional: Store current price for caching (can be updated separately)
         public decimal? CurrentPrice { get; set; }
+        public decimal? Change { get; set; }          // Absolute change
+        public decimal? ChangePercent { get; set; }   // Percentage change
+        public DateTime? LastUpdated { get; set; }
 
         // Optional: Store additional stock metadata
         public string? Exchange { get; set; }

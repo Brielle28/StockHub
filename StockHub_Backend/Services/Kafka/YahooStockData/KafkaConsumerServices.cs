@@ -57,60 +57,6 @@ namespace StockHub_Backend.Services.Kafka.YahooStockData
                 PropertyNameCaseInsensitive = true
             };
         }
-
-        // protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-        // {
-        //     var topics = new[] { "yahoo-stock-prices" };
-        //     _consumer.Subscribe(topics);
-
-        //     _logger.LogInformation("Kafka consumer started. Subscribed to topics: {Topics}", string.Join(", ", topics));
-
-        //     try
-        //     {
-        //         while (!stoppingToken.IsCancellationRequested)
-        //         {
-        //             try
-        //             {
-        //                 var consumeResult = _consumer.Consume(stoppingToken);
-
-        //                 if (consumeResult?.Message?.Value != null)
-        //                 {
-        //                     await ProcessMessageAsync(consumeResult.Message);
-        //                 }
-        //             }
-        //             catch (ConsumeException ex)
-        //             {
-        //                 _logger.LogError(ex, "Error consuming message: {Error}", ex.Error.Reason);
-        //                 await Task.Delay(1000, stoppingToken); // Brief pause before retrying
-        //             }
-        //             catch (OperationCanceledException)
-        //             {
-        //                 break; // Expected when cancellation is requested
-        //             }
-        //             catch (Exception ex)
-        //             {
-        //                 _logger.LogError(ex, "Unexpected error in Kafka consumer");
-        //                 await Task.Delay(5000, stoppingToken); // Longer pause for unexpected errors
-        //             }
-        //         }
-        //     }
-        //     catch (OperationCanceledException)
-        //     {
-        //         _logger.LogInformation("Kafka consumer cancelled");
-        //     }
-        //     finally
-        //     {
-        //         try
-        //         {
-        //             _consumer.Close();
-        //             _logger.LogInformation("Kafka consumer closed");
-        //         }
-        //         catch (Exception ex)
-        //         {
-        //             _logger.LogError(ex, "Error closing Kafka consumer");
-        //         }
-        //     }
-        // }
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             var topics = new[] { "yahoo-stock-prices" };
@@ -220,38 +166,39 @@ namespace StockHub_Backend.Services.Kafka.YahooStockData
         }
     }
 
+
     // SignalR Hub for real-time updates
-    public class StockPriceHub : Hub<IStockPriceHub>
-    {
-        private readonly ILogger<StockPriceHub> _logger;
-
-        public StockPriceHub(ILogger<StockPriceHub> logger)
+        public class StockPriceHub : Hub<IStockPriceHub>
         {
-            _logger = logger;
-        }
+            private readonly ILogger<StockPriceHub> _logger;
 
-        public async Task JoinGroup(string groupName)
-        {
-            await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
-            _logger.LogInformation("Client {ConnectionId} joined group {GroupName}", Context.ConnectionId, groupName);
-        }
+            public StockPriceHub(ILogger<StockPriceHub> logger)
+            {
+                _logger = logger;
+            }
 
-        public async Task LeaveGroup(string groupName)
-        {
-            await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName);
-            _logger.LogInformation("Client {ConnectionId} left group {GroupName}", Context.ConnectionId, groupName);
-        }
+            public async Task JoinGroup(string groupName)
+            {
+                await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+                _logger.LogInformation("Client {ConnectionId} joined group {GroupName}", Context.ConnectionId, groupName);
+            }
 
-        public override async Task OnConnectedAsync()
-        {
-            _logger.LogInformation("Client connected: {ConnectionId}", Context.ConnectionId);
-            await base.OnConnectedAsync();
-        }
+            public async Task LeaveGroup(string groupName)
+            {
+                await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName);
+                _logger.LogInformation("Client {ConnectionId} left group {GroupName}", Context.ConnectionId, groupName);
+            }
 
-        public override async Task OnDisconnectedAsync(Exception? exception)
-        {
-            _logger.LogInformation("Client disconnected: {ConnectionId}", Context.ConnectionId);
-            await base.OnDisconnectedAsync(exception);
+            public override async Task OnConnectedAsync()
+            {
+                _logger.LogInformation("Client connected: {ConnectionId}", Context.ConnectionId);
+                await base.OnConnectedAsync();
+            }
+
+            public override async Task OnDisconnectedAsync(Exception? exception)
+            {
+                _logger.LogInformation("Client disconnected: {ConnectionId}", Context.ConnectionId);
+                await base.OnDisconnectedAsync(exception);
+            }
         }
-    }
 }

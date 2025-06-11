@@ -27,28 +27,20 @@ using System.ComponentModel.DataAnnotations;
 
 namespace StockHub_Backend.DTOs.Portfolio
 {
-    public class PortfolioStockDto
-    {
-        public int Id { get; set; }
-        public string Symbol { get; set; }
-        public decimal Quantity { get; set; }
-        public decimal PurchasePrice { get; set; }
-        public DateTime PurchaseDate { get; set; }
-        public decimal CurrentPrice { get; set; }
-        public decimal PreviousClose { get; set; }
-        public decimal CurrentValue { get; set; }
-        public decimal GainLoss { get; set; }
-        public decimal GainLossPercent { get; set; }
-    }
-
-   
-    
-
-    
-
-   
-
-    
+   public class PortfolioStockDto
+{
+    public int Id { get; set; }
+    public string Symbol { get; set; }
+    public decimal Quantity { get; set; }
+    public decimal PurchasePrice { get; set; }
+    public DateTime PurchaseDate { get; set; }
+    public decimal CurrentPrice { get; set; }
+    public decimal PreviousClose { get; set; }
+    public decimal CurrentValue { get; set; }
+    public decimal GainLoss { get; set; }
+    public decimal GainLossPercent { get; set; }
+    public DateTime? LastUpdated { get; set; } // Add this
+}
 }
 
 namespace StockHub_Backend.Dtos.Portfolio

@@ -3,15 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
-
-// namespace StockHub_Backend.Dtos.Users
-// {
-//     public class Users
-//     {
-
-//     }
-// }
-
 namespace StockHub_Backend.Dtos.Users
 {
     public class RefreshTokenRequestDto

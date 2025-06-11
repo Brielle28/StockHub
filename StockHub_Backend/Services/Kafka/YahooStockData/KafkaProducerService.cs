@@ -25,7 +25,7 @@ namespace StockHub_Backend.Services.Kafka.YahooStockData
             {
                 BootstrapServers = configuration["Kafka:BootstrapServers"] ?? "localhost:9092",
                 ClientId = configuration["Kafka:ClientId"] ?? "StockHub",
-                EnableIdempotence = true,
+                EnableIdempotence = false,
                 MessageSendMaxRetries = 3,
                 RetryBackoffMs = 1000,
                 RequestTimeoutMs = 30000,

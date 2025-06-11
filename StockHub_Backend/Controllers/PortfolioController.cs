@@ -19,13 +19,19 @@ namespace StockHub_Backend.Controllers
     {
         private readonly UserManager<AppUser> _userManager;
         private readonly IPortfolioRepository _portfolioRepository;
+        private readonly IPortfolioStockPriceUpdateService _priceUpdateService;
+        private readonly ILogger<PortfoliosController> _logger;
 
         public PortfoliosController(
             UserManager<AppUser> userManager,
-            IPortfolioRepository portfolioRepository)
+            IPortfolioRepository portfolioRepository,
+            IPortfolioStockPriceUpdateService priceUpdateService,
+            ILogger<PortfoliosController> logger)
         {
             _userManager = userManager;
             _portfolioRepository = portfolioRepository;
+            _priceUpdateService = priceUpdateService;
+            _logger = logger;
         }
 
         // GET: api/portfolios
@@ -197,6 +203,7 @@ namespace StockHub_Backend.Controllers
                 return StatusCode(500, new { error = ex.Message, stackTrace = ex.StackTrace });
             }
         }
+
         // DELETE: api/portfolios/{id}/stocks/{stockId}
         [HttpDelete("{id}/stocks/{stockId}")]
         public async Task<IActionResult> RemoveStockFromPortfolio(int id, int stockId)
@@ -249,6 +256,86 @@ namespace StockHub_Backend.Controllers
             var appUser = await _userManager.FindByNameAsync(username);
             var userPortfolio = await _portfolioRepository.GetUserPortfolio(appUser);
             return Ok(userPortfolio);
+        }
+
+        // Manual trigger for price updates
+        [HttpPost("trigger-price-update")]
+        [Authorize]
+        public async Task<IActionResult> TriggerPriceUpdate()
+        {
+            try
+            {
+                _logger.LogInformation("Manual price update triggered by user: {Username}", User.GetUsername());
+                
+                await _priceUpdateService.UpdateAllPortfolioStockPricesAsync();
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Portfolio stock prices updated successfully",
+                    timestamp = DateTime.UtcNow
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Manual price update failed for user: {Username}", User.GetUsername());
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Failed to update portfolio stock prices",
+                    error = ex.Message,
+                    timestamp = DateTime.UtcNow
+                });
+            }
+        }
+
+        // Optional: Get price update status
+        [HttpGet("price-update-status")]
+        [Authorize]
+        public async Task<IActionResult> GetPriceUpdateStatus()
+        {
+            try
+            {
+                var username = User.GetUsername();
+                var user = await _userManager.FindByNameAsync(username);
+
+                if (user == null)
+                {
+                    return Unauthorized();
+                }
+
+                // Get user's portfolios and their stocks
+                var portfolios = await _portfolioRepository.GetUserPortfolios(user);
+                var totalStocks = 0;
+                var uniqueSymbols = new HashSet<string>();
+
+                foreach (var portfolio in portfolios)
+                {
+                    var stocks = await _portfolioRepository.GetPortfolioStocks(portfolio.Id, user.Id);
+                    totalStocks += stocks.Count();
+                    
+                    // Collect unique symbols
+                    foreach (var stock in stocks)
+                    {
+                        uniqueSymbols.Add(stock.Symbol);
+                    }
+                }
+
+                return Ok(new
+                {
+                    totalStocks = totalStocks,
+                    uniqueSymbols = uniqueSymbols.Count,
+                    totalPortfolios = portfolios.Count(),
+                    lastChecked = DateTime.UtcNow,
+                    nextScheduledUpdate = DateTime.UtcNow.AddMinutes(5), // Based on your background service interval
+                    backgroundServiceActive = true
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting price update status for user: {Username}", User.GetUsername());
+                return StatusCode(500, new { error = ex.Message });
+            }
         }
     }
 }
