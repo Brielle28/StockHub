@@ -9,13 +9,20 @@ namespace StockHub_Backend.Services.TokenServices
 {
     public interface ITokenService
     {
-        string createToken(AppUser user);
         // string createToken(AppUser user);
+        // string GenerateAccessToken(AppUser user);
+        // string GenerateRefreshToken();
+        // ClaimsPrincipal GetPrincipalFromExpiredToken(string token);
+        // Task<bool> ValidateRefreshTokenAsync(string userId, string refreshToken);
+        // Task StoreRefreshTokenAsync(string userId, string refreshToken);
+        // Task RevokeRefreshTokenAsync(string userId);
+        string createToken(AppUser user); // Keep for backward compatibility if needed
         string GenerateAccessToken(AppUser user);
         string GenerateRefreshToken();
         ClaimsPrincipal GetPrincipalFromExpiredToken(string token);
-        bool ValidateRefreshToken(string userId, string refreshToken);
-        void StoreRefreshToken(string userId, string refreshToken);
-        void RevokeRefreshToken(string userId);
+        Task<bool> ValidateRefreshTokenAsync(string userId, string refreshToken);
+        Task StoreRefreshTokenAsync(string userId, string refreshToken);
+        Task RevokeRefreshTokenAsync(string userId);
     }
+
 }

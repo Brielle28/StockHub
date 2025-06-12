@@ -19,18 +19,19 @@ namespace StockHub_Backend.Data
         public DbSet<Comment> Comments { get; set; }
         public DbSet<Portfolio> Portfolios { get; set; }
         public DbSet<PortfolioStock> PortfolioStocks { get; set; }
-        
+
         // Stock-related models (separate from portfolio)
         public DbSet<StockQuote> StockQuotes { get; set; }
         public DbSet<StockHistory> StockHistories { get; set; }
         public DbSet<StockDataPoint> StockDataPoints { get; set; }
         public DbSet<StockNews> StockNews { get; set; }
         public DbSet<StockSearchResult> StockSearchResults { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
-            
+
             // Enforce unique normalized email
             builder.Entity<AppUser>()
                 .HasIndex(u => u.NormalizedEmail)
