@@ -20,7 +20,6 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
     { path: "/dashboard", name: "Dashboard", icon: <FaHome /> },
     { path: "/dashboard/market", name: "Market", icon: <FaChartLine /> },
     { path: "/dashboard/portfolio", name: "Portfolio", icon: <FaWallet /> },
-    { path: "/dashboard/notifications", name: "Notifications", icon: <FaBell /> },
   ];
 
   const handleLogout = async () => {

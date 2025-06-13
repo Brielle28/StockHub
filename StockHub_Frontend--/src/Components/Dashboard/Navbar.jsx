@@ -1,8 +1,11 @@
 import { FaBars, FaBell } from "react-icons/fa";
 import { useAuth } from "../../Context/AuthContext";
 import { Link } from "react-router-dom";
+import { useState } from "react";
+import NotificationsOverlay from "./Notifications";
 
 const Navbar = ({ toggleSidebar }) => {
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const { user } = useAuth();
 
   return (
@@ -30,11 +33,21 @@ const Navbar = ({ toggleSidebar }) => {
         <div className="flex-1"></div>
 
         {/* Bell icon */}
-        <Link to="/dashboard/notifications">
-          <button className="p-2 rounded-full bg-[#111111] text-gray-400 hover:text-white focus:outline-none focus:ring-1 focus:ring-gray-600">
+          <button
+            onClick={() => setNotificationsOpen(!notificationsOpen)}
+            className="relative p-2 rounded-full bg-[#111111] text-gray-400 hover:text-white focus:outline-none focus:ring-1 focus:ring-gray-600"
+          >
             <FaBell />
+          {/* Notification badge */}
+          <div className="absolute -top-3 left-6">
+            <span className="text-xs text-[#d4fb2b] font-bold">3</span>
+          </div>
           </button>
-        </Link>
+
+        <NotificationsOverlay
+          isOpen={notificationsOpen}
+          onClose={() => setNotificationsOpen(false)}
+        />
       </div>
     </header>
   );

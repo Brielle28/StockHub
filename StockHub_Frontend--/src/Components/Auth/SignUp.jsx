@@ -160,7 +160,7 @@ const SignUp = () => {
   };
 
   return (
-    <div className="min-h-screen md:h-[60vh] flex items-center justify-center bg-transparent px-4 py-4 md:pt-0 overflow-y-scroll">
+    <div className="h-screen md:h-[60vh] flex items-center justify-center bg-transparent px-4 md:pt-0 overflow-y-scroll">
       <div className="w-full max-w-xl bg-gradient-to-b from-[#0c0c0c] to-[#1a1a1a] rounded-3xl shadow-2xl p-8 border border-gray-800">
         <div className="text-center mb-8">
           <h2 className="text-xl md:text-3xl font-bold bg-gradient-to-r from-[#d4fb2b] to-[#a8d916] bg-clip-text text-transparent mb-3">

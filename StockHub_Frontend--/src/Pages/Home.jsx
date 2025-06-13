@@ -2,8 +2,8 @@ import { FaGooglePlay, FaApple, FaSpaceShuttle } from "react-icons/fa";
 
 const Home = () => {
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-center">
-      <div className="w-full max-w-7xl flex flex-col items-center justify-center text-center mt-10 sm:mt-14 lg:mt-20">
+    <div className="min-h-screen container mx-auto px-4 sm:px-6 lg:px-8 flex justify-center">
+      <div className="w-full max-w-7xl flex flex-col md:items-center md:justify-center text-center mt-10 md:mt-14 lg:mt-20">
         {/* Hero Content */}
         <div className="w-full flex flex-col items-center justify-center">
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-gray-300 font-bold mb-4 sm:mb-5 leading-tight">
