@@ -8,66 +8,12 @@ import {
   AlertCircle,
   Check,
   X,
-  Filter,
-  Download,
-  Search,
   Activity,
+  Wifi,
+  WifiOff,
+  AlertTriangle,
 } from "lucide-react";
-
-// Mock data
-const mockAlerts = [
-  {
-    id: 1,
-    symbol: "AAPL",
-    targetPrice: 150.0,
-    condition: "Greater Than",
-    createdDate: "2024-06-10",
-    status: "active",
-  },
-  {
-    id: 2,
-    symbol: "GOOGL",
-    targetPrice: 2800.0,
-    condition: "Less Than",
-    createdDate: "2024-06-09",
-    status: "active",
-  },
-  {
-    id: 3,
-    symbol: "TSLA",
-    targetPrice: 200.0,
-    condition: "Equal To",
-    createdDate: "2024-06-08",
-    status: "active",
-  },
-];
-
-const mockTriggeredAlerts = [
-  {
-    id: 1,
-    symbol: "MSFT",
-    targetPrice: 300.0,
-    actualPrice: 305.5,
-    triggerDate: "2024-06-12 10:30:00",
-    condition: "Greater Than",
-  },
-  {
-    id: 2,
-    symbol: "NVDA",
-    targetPrice: 800.0,
-    actualPrice: 795.0,
-    triggerDate: "2024-06-11 14:22:00",
-    condition: "Less Than",
-  },
-  {
-    id: 3,
-    symbol: "AMZN",
-    targetPrice: 125.0,
-    actualPrice: 125.0,
-    triggerDate: "2024-06-10 09:15:00",
-    condition: "Equal To",
-  },
-];
+import { useAlerts } from "../../Context/AlertsContext";
 
 // Toast notification component
 const Toast = ({ message, type, onClose }) => {
@@ -105,14 +51,53 @@ const Toast = ({ message, type, onClose }) => {
   );
 };
 
+// Connection status indicator
+const ConnectionStatus = ({ status }) => {
+  const getStatusInfo = () => {
+    switch (status) {
+      case "connected":
+        return { icon: Wifi, color: "text-emerald-400", text: "Live" };
+      case "connecting":
+        return { icon: Activity, color: "text-yellow-400", text: "Connecting" };
+      case "failed":
+        return { icon: AlertTriangle, color: "text-red-400", text: "Failed" };
+      default:
+        return { icon: WifiOff, color: "text-gray-400", text: "Offline" };
+    }
+  };
+
+  const { icon: Icon, color, text } = getStatusInfo();
+
+  return (
+    <div className={`flex items-center space-x-1 ${color}`}>
+      <div
+        className={`w-2 h-2 ${color.replace("text-", "bg-")} rounded-full ${
+          status === "connected" ? "animate-pulse" : ""
+        }`}
+      ></div>
+      <Icon className="w-3 h-3" />
+      <span className="text-xs">{text}</span>
+    </div>
+  );
+};
+
 // Alert Creation Form Component
-const AlertForm = ({ onSubmit, loading }) => {
+const AlertForm = () => {
+  const { createAlert, loading } = useAlerts();
   const [formData, setFormData] = useState({
     symbol: "",
     targetPrice: "",
-    condition: "Greater Than",
+    condition: 0, // Changed to numeric value to match backend enum
   });
   const [errors, setErrors] = useState({});
+  const [toast, setToast] = useState(null);
+
+  // Map condition enum values to display text
+  const conditionOptions = [
+    { value: 0, label: "Price Goes Above", text: "GREATER_THAN" },
+    { value: 1, label: "Price Goes Below", text: "LESS_THAN" },
+    { value: 2, label: "Price Equals", text: "EQUALS" },
+  ];
 
   const validateForm = () => {
     const newErrors = {};
@@ -133,97 +118,136 @@ const AlertForm = ({ onSubmit, loading }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (validateForm()) {
-      onSubmit({
-        ...formData,
+      const alertData = {
         symbol: formData.symbol.toUpperCase(),
         targetPrice: parseFloat(formData.targetPrice),
-      });
-      setFormData({ symbol: "", targetPrice: "", condition: "Greater Than" });
+        condition: parseInt(formData.condition), // Ensure it's sent as number, not string
+      };
+
+      console.log("Sending alert data:", alertData); // Debug log to verify the payload
+
+      const result = await createAlert(alertData);
+
+      if (result.success) {
+        setFormData({ symbol: "", targetPrice: "", condition: 0 });
+        setToast({ message: "Alert created successfully!", type: "success" });
+      } else {
+        setToast({ message: result.error, type: "error" });
+      }
     }
   };
 
   return (
-    <div className="p-6">
-      <div className="space-y-4">
-        <div>
-          <label className="block text-gray-300 text-sm font-medium mb-2">
-            Stock Symbol
-          </label>
-          <input
-            type="text"
-            value={formData.symbol}
-            onChange={(e) =>
-              setFormData({ ...formData, symbol: e.target.value })
-            }
-            className="w-full px-3 py-2 bg-[#0A0A0A]/80 border border-gray-600/50 rounded-lg text-white placeholder-gray-400 focus:border-[#D4FB2B] focus:outline-none focus:ring-1 focus:ring-[#D4FB2B]/20 transition-all text-sm"
-            placeholder="e.g., AAPL"
-            maxLength="5"
-          />
-          {errors.symbol && (
-            <p className="text-red-400 text-xs mt-1">{errors.symbol}</p>
-          )}
-        </div>
+    <>
+      <div className="p-6">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-gray-300 text-sm font-medium mb-2">
+              Stock Symbol
+            </label>
+            <input
+              type="text"
+              value={formData.symbol}
+              onChange={(e) =>
+                setFormData({ ...formData, symbol: e.target.value })
+              }
+              className="w-full px-3 py-2 bg-[#0A0A0A]/80 border border-gray-600/50 rounded-lg text-white placeholder-gray-400 focus:border-[#D4FB2B] focus:outline-none focus:ring-1 focus:ring-[#D4FB2B]/20 transition-all text-sm"
+              placeholder="e.g., AAPL"
+              maxLength="5"
+            />
+            {errors.symbol && (
+              <p className="text-red-400 text-xs mt-1">{errors.symbol}</p>
+            )}
+          </div>
 
-        <div>
-          <label className="block text-gray-300 text-sm font-medium mb-2">
-            Target Price ($)
-          </label>
-          <input
-            type="number"
-            step="0.01"
-            value={formData.targetPrice}
-            onChange={(e) =>
-              setFormData({ ...formData, targetPrice: e.target.value })
-            }
-            className="w-full px-3 py-2 bg-[#0A0A0A]/80 border border-gray-600/50 rounded-lg text-white placeholder-gray-400 focus:border-[#D4FB2B] focus:outline-none focus:ring-1 focus:ring-[#D4FB2B]/20 transition-all text-sm"
-            placeholder="0.00"
-          />
-          {errors.targetPrice && (
-            <p className="text-red-400 text-xs mt-1">{errors.targetPrice}</p>
-          )}
-        </div>
+          <div>
+            <label className="block text-gray-300 text-sm font-medium mb-2">
+              Target Price ($)
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              value={formData.targetPrice}
+              onChange={(e) =>
+                setFormData({ ...formData, targetPrice: e.target.value })
+              }
+              className="w-full px-3 py-2 bg-[#0A0A0A]/80 border border-gray-600/50 rounded-lg text-white placeholder-gray-400 focus:border-[#D4FB2B] focus:outline-none focus:ring-1 focus:ring-[#D4FB2B]/20 transition-all text-sm"
+              placeholder="0.00"
+            />
+            {errors.targetPrice && (
+              <p className="text-red-400 text-xs mt-1">{errors.targetPrice}</p>
+            )}
+          </div>
 
-        <div>
-          <label className="block text-gray-300 text-sm font-medium mb-2">
-            Condition
-          </label>
-          <select
-            value={formData.condition}
-            onChange={(e) =>
-              setFormData({ ...formData, condition: e.target.value })
-            }
-            className="w-full px-3 py-2 bg-[#0A0A0A]/80 border border-gray-600/50 rounded-lg text-white focus:border-[#D4FB2B] focus:outline-none focus:ring-1 focus:ring-[#D4FB2B]/20 transition-all text-sm"
+          <div>
+            <label className="block text-gray-300 text-sm font-medium mb-2">
+              Condition
+            </label>
+            <select
+              value={formData.condition}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  condition: parseInt(e.target.value),
+                })
+              }
+              className="w-full px-3 py-2 bg-[#0A0A0A]/80 border border-gray-600/50 rounded-lg text-white focus:border-[#D4FB2B] focus:outline-none focus:ring-1 focus:ring-[#D4FB2B]/20 transition-all text-sm"
+            >
+              {conditionOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-[#D4FB2B] to-[#85e600] text-black font-medium py-2 rounded-lg hover:shadow-lg hover:shadow-[#D4FB2B]/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
           >
-            <option value="Greater Than">Price Goes Above</option>
-            <option value="Less Than">Price Goes Below</option>
-            <option value="Equal To">Price Equals</option>
-          </select>
+            {loading ? (
+              <div className="flex items-center justify-center space-x-2">
+                <div className="w-3 h-3 border-2 border-black/30 border-t-black rounded-full animate-spin"></div>
+                <span>Creating...</span>
+              </div>
+            ) : (
+              "Create Alert"
+            )}
+          </button>
         </div>
-
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={loading}
-          className="w-full bg-gradient-to-r from-[#D4FB2B] to-[#85e600] text-black font-medium py-2 rounded-lg hover:shadow-lg hover:shadow-[#D4FB2B]/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-        >
-          {loading ? (
-            <div className="flex items-center justify-center space-x-2">
-              <div className="w-3 h-3 border-2 border-black/30 border-t-black rounded-full animate-spin"></div>
-              <span>Creating...</span>
-            </div>
-          ) : (
-            "Create Alert"
-          )}
-        </button>
       </div>
-    </div>
+
+      {/* Toast Notifications */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+    </>
   );
 };
 
 // Active Alerts Component
-const ActiveAlerts = ({ alerts, onDelete, loading }) => {
+const ActiveAlerts = () => {
+  const { activeAlerts, deleteAlert, loading } = useAlerts();
+  const [toast, setToast] = useState(null);
+
+  const handleDelete = async (alertId) => {
+    const result = await deleteAlert(alertId);
+
+    if (result.success) {
+      setToast({ message: "Alert deleted successfully!", type: "success" });
+    } else {
+      setToast({ message: result.error, type: "error" });
+    }
+  };
+
   const getConditionIcon = (condition) => {
     switch (condition) {
       case "Greater Than":
@@ -247,86 +271,118 @@ const ActiveAlerts = ({ alerts, onDelete, loading }) => {
   };
 
   return (
-    <div className="p-6">
-      {alerts.length === 0 ? (
-        <div className="text-center py-8">
-          <div className="w-12 h-12 bg-gray-700/30 rounded-full flex items-center justify-center mx-auto mb-3">
-            <Bell className="w-6 h-6 text-gray-500" />
-          </div>
-          <h3 className="text-base font-medium text-gray-300 mb-1">
-            No Active Alerts
-          </h3>
-          <p className="text-gray-500 text-sm">
-            Create your first alert to start monitoring
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3 max-h-80 overflow-y-auto">
-          {alerts.map((alert) => (
-            <div
-              key={alert.id}
-              className="group bg-[#0A0A0A]/50 rounded-lg p-4 border border-gray-600/30 hover:border-[#D4FB2B]/30 transition-all duration-300"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="text-center">
-                    <div className="font-mono text-[#D4FB2B] font-bold text-lg">
-                      {alert.symbol}
-                    </div>
-                    <div className="text-gray-400 text-xs">
-                      {alert.createdDate}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <div className="flex items-center space-x-1">
-                      {getConditionIcon(alert.condition)}
-                      <span
-                        className={`text-xs font-medium ${getConditionColor(
-                          alert.condition
-                        )}`}
-                      >
-                        {alert.condition}
-                      </span>
-                    </div>
-                    <div className="text-white font-bold text-sm">
-                      ${alert.targetPrice.toFixed(2)}
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => onDelete(alert.id)}
-                  disabled={loading}
-                  className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 hover:bg-red-400/10 p-2 rounded-md transition-all duration-300 disabled:opacity-50"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
+    <>
+      <div className="p-6">
+        {activeAlerts.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="w-12 h-12 bg-gray-700/30 rounded-full flex items-center justify-center mx-auto mb-3">
+              <Bell className="w-6 h-6 text-gray-500" />
             </div>
-          ))}
-        </div>
+            <h3 className="text-base font-medium text-gray-300 mb-1">
+              No Active Alerts
+            </h3>
+            <p className="text-gray-500 text-sm">
+              Create your first alert to start monitoring
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3 max-h-80 overflow-y-auto">
+            {activeAlerts.map((alert) => (
+              <div
+                key={alert.id}
+                className="group bg-[#0A0A0A]/50 rounded-lg p-4 border border-gray-600/30 hover:border-[#D4FB2B]/30 transition-all duration-300"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="text-center">
+                      <div className="font-mono text-[#D4FB2B] font-bold text-lg">
+                        {alert.symbol}
+                      </div>
+                      <div className="text-gray-400 text-xs">
+                        {new Date(
+                          alert.createdDate || alert.createdAt
+                        ).toLocaleDateString()}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-1">
+                        {getConditionIcon(alert.condition)}
+                        <span
+                          className={`text-xs font-medium ${getConditionColor(
+                            alert.condition
+                          )}`}
+                        >
+                          {alert.condition}
+                        </span>
+                      </div>
+                      <div className="text-white font-bold text-sm">
+                        ${alert.targetPrice.toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => handleDelete(alert.id)}
+                    disabled={loading}
+                    className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 hover:bg-red-400/10 p-2 rounded-md transition-all duration-300 disabled:opacity-50"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Toast Notifications */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
-    </div>
+    </>
   );
 };
 
 // Triggered Alerts Component
-const TriggeredAlerts = ({ alerts }) => {
-  const getConditionIcon = (condition) => {
+const TriggeredAlerts = () => {
+  const { triggeredAlerts } = useAlerts();
+
+  // Map numeric condition values to strings
+  const getConditionText = (condition) => {
     switch (condition) {
+      case 0:
+        return "Greater Than";
+      case 1:
+        return "Less Than";
+      case 2:
+        return "Equals";
+      default:
+        return "Unknown";
+    }
+  };
+
+  const getConditionIcon = (condition) => {
+    const conditionText = getConditionText(condition);
+    switch (conditionText) {
       case "Greater Than":
         return <TrendingUp className="w-4 h-4 text-emerald-400" />;
       case "Less Than":
         return <TrendingDown className="w-4 h-4 text-red-400" />;
-      default:
+      case "Equals":
         return <AlertCircle className="w-4 h-4 text-amber-400" />;
+      default:
+        return <AlertCircle className="w-4 h-4 text-gray-400" />;
     }
   };
 
   return (
     <div className="p-6">
-      {alerts.length === 0 ? (
+      {triggeredAlerts.length === 0 ? (
         <div className="text-center py-8">
           <div className="w-12 h-12 bg-gray-700/30 rounded-full flex items-center justify-center mx-auto mb-3">
             <Check className="w-6 h-6 text-gray-500" />
@@ -340,7 +396,7 @@ const TriggeredAlerts = ({ alerts }) => {
         </div>
       ) : (
         <div className="space-y-3 max-h-80 overflow-y-auto">
-          {alerts.map((alert) => (
+          {triggeredAlerts.map((alert) => (
             <div
               key={alert.id}
               className="bg-[#0A0A0A]/50 rounded-lg p-4 border border-gray-600/30 hover:border-emerald-400/30 transition-all duration-300"
@@ -353,15 +409,23 @@ const TriggeredAlerts = ({ alerts }) => {
                   <div className="flex items-center space-x-1">
                     {getConditionIcon(alert.condition)}
                     <span className="text-gray-400 text-xs">
-                      {alert.condition}
+                      {getConditionText(alert.condition)}
                     </span>
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="text-emerald-400 font-bold text-sm">
-                    ${alert.actualPrice.toFixed(2)}
+                    ${alert.targetPrice.toFixed(2)}
                   </div>
-                  <div className="text-gray-400 text-xs">Triggered</div>
+                  <div className="text-gray-400 text-xs">
+                    {alert.symbol}{" "}
+                    {getConditionText(alert.condition) === "Greater Than"
+                      ? "Above"
+                      : getConditionText(alert.condition) === "Less Than"
+                      ? "Below"
+                      : "Equal to"}{" "}
+                    Target
+                  </div>
                 </div>
               </div>
 
@@ -373,7 +437,9 @@ const TriggeredAlerts = ({ alerts }) => {
                   </span>
                 </div>
                 <div className="text-gray-400">
-                  {new Date(alert.triggerDate).toLocaleDateString()}
+                  {new Date(
+                    alert.triggerDate || alert.triggeredAt
+                  ).toLocaleDateString()}
                 </div>
               </div>
             </div>
@@ -383,14 +449,18 @@ const TriggeredAlerts = ({ alerts }) => {
     </div>
   );
 };
-
 // Main Notifications Overlay Component
 const NotificationsOverlay = ({ isOpen, onClose }) => {
+  const {
+    activeAlerts,
+    triggeredAlerts,
+    connectionStatus,
+    error,
+    clearError,
+    refreshData,
+  } = useAlerts();
+
   const [activeTab, setActiveTab] = useState("newAlert");
-  const [activeAlerts, setActiveAlerts] = useState(mockAlerts);
-  const [triggeredAlerts, setTriggeredAlerts] = useState(mockTriggeredAlerts);
-  const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState(null);
   const overlayRef = useRef(null);
 
   // Close overlay when clicking outside
@@ -427,45 +497,15 @@ const NotificationsOverlay = ({ isOpen, onClose }) => {
     };
   }, [isOpen, onClose]);
 
-  const showToast = (message, type = "info") => {
-    setToast({ message, type });
-  };
-
-  const handleCreateAlert = async (alertData) => {
-    setLoading(true);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const newAlert = {
-        id: Date.now(),
-        ...alertData,
-        createdDate: new Date().toISOString().split("T")[0],
-        status: "active",
-      };
-
-      setActiveAlerts((prev) => [...prev, newAlert]);
-      showToast("Alert created successfully!", "success");
-      setActiveTab("activeAlerts"); // Switch to active alerts tab
-    } catch (error) {
-      showToast("Failed to create alert. Please try again.", "error");
-    } finally {
-      setLoading(false);
+  // Clear error when component mounts
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        clearError();
+      }, 5000);
+      return () => clearTimeout(timer);
     }
-  };
-
-  const handleDeleteAlert = async (alertId) => {
-    setLoading(true);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      setActiveAlerts((prev) => prev.filter((alert) => alert.id !== alertId));
-      showToast("Alert deleted successfully!", "success");
-    } catch (error) {
-      showToast("Failed to delete alert. Please try again.", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [error, clearError]);
 
   const tabs = [
     { id: "newAlert", label: "New Alert", icon: Plus, count: null },
@@ -493,7 +533,7 @@ const NotificationsOverlay = ({ isOpen, onClose }) => {
       {/* Overlay */}
       <div
         ref={overlayRef}
-        className="fixed top-16 right-10 w-96 bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] rounded-2xl border border-gray-700/50 shadow-2xl backdrop-blur-xl z-50 max-h-[calc(100vh-5rem)] overflow-auto"
+        className="fixed top-16 lg:right-10 w-96 bg-gradient-to-br from-[#1A1A1A] to-[#2A2A2A] rounded-2xl border border-gray-700/50 shadow-2xl backdrop-blur-xl z-50 max-h-[calc(100vh-5rem)] overflow-auto"
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-700/50">
@@ -506,13 +546,38 @@ const NotificationsOverlay = ({ isOpen, onClose }) => {
               <p className="text-gray-400 text-[12px]">Manage your alerts</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-white p-2 hover:bg-gray-700/50 rounded-lg transition-all"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={refreshData}
+              className="text-gray-400 hover:text-white p-2 hover:bg-gray-700/50 rounded-lg transition-all"
+              title="Refresh data"
+            >
+              <Activity className="w-4 h-4" />
+            </button>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-white p-2 hover:bg-gray-700/50 rounded-lg transition-all"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="mx-6 mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="w-4 h-4 text-red-400" />
+              <span className="text-red-400 text-sm">{error}</span>
+              <button
+                onClick={clearError}
+                className="ml-auto text-red-400 hover:text-red-300"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex border-b border-gray-700/50">
@@ -548,25 +613,15 @@ const NotificationsOverlay = ({ isOpen, onClose }) => {
 
         {/* Tab Content */}
         <div className="overflow-y-auto max-h-96">
-          {activeTab === "newAlert" && (
-            <AlertForm onSubmit={handleCreateAlert} loading={loading} />
-          )}
-          {activeTab === "activeAlerts" && (
-            <ActiveAlerts
-              alerts={activeAlerts}
-              onDelete={handleDeleteAlert}
-              loading={loading}
-            />
-          )}
-          {activeTab === "triggeredAlerts" && (
-            <TriggeredAlerts alerts={triggeredAlerts} />
-          )}
+          {activeTab === "newAlert" && <AlertForm />}
+          {activeTab === "activeAlerts" && <ActiveAlerts />}
+          {activeTab === "triggeredAlerts" && <TriggeredAlerts />}
         </div>
 
         {/* Footer Stats */}
         <div className="p-4 border-t border-gray-700/50 bg-[#0A0A0A]/50">
           <div className="flex items-center justify-between text-sm">
-            <div className="text-gray-400 ">
+            <div className="text-gray-400">
               <span className="text-[#D4FB2B] font-bold">
                 {activeAlerts.length}
               </span>{" "}
@@ -578,23 +633,12 @@ const NotificationsOverlay = ({ isOpen, onClose }) => {
               </span>{" "}
               Triggered
             </div>
-            <div className="flex items-center space-x-1 text-emerald-400">
-              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-              <span className="text-xs">Live</span>
-            </div>
+            <ConnectionStatus status={connectionStatus} />
           </div>
         </div>
       </div>
-
-      {/* Toast Notifications */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
     </>
   );
 };
+
 export default NotificationsOverlay;

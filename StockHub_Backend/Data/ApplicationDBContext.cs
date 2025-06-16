@@ -28,6 +28,9 @@ namespace StockHub_Backend.Data
         public DbSet<StockSearchResult> StockSearchResults { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
 
+        // alert
+        public DbSet<Alert> Alerts { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -153,6 +156,21 @@ namespace StockHub_Backend.Data
 
                 entity.HasIndex(e => e.CompanyName);
                 entity.HasIndex(e => e.Exchange);
+            });
+
+            // Configure Alert entity
+            builder.Entity<Alert>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.UserId).IsRequired();
+                entity.Property(e => e.Symbol).IsRequired().HasMaxLength(10);
+                entity.Property(e => e.TargetPrice).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.Condition).HasConversion<string>();
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+                // Index for better performance
+                entity.HasIndex(e => new { e.UserId, e.IsActive });
+                entity.HasIndex(e => new { e.Symbol, e.IsActive });
             });
 
             // Identity roles seed data

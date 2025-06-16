@@ -7,7 +7,7 @@ import ForgetPassword from "./Pages/ForgetPassword";
 import DashboardLayout from "./Layout/DashboardLayout";
 import DashboardHome from "./Components/Dashboard/DashboardHome";
 import MarketPage from "./Components/Dashboard/MarketPlace/MarketPage";
-import ErrorPage from "./Pages/ErrorPage";
+import ErrorPage from "./Pages/404Page";
 import PortfolioPage from "./Components/Dashboard/Portfolio/PortfolioPage";
 import ProtectedRoute from "./Components/ProtectedRoute";
 import PublicRoute from "./Components/PublicRoute";
@@ -15,11 +15,18 @@ import ContextProviderWrapper from "./Context/ContextProviderWrapper";
 import AuthProvider from "./Context/AuthContext";
 import Notifications from "./Components/Dashboard/Notifications";
 import SharedPortfolioProvider from "./Context/PortfolioContext";
+import ErrorBoundary from "./Components/ErrorBoundary";
+import DeveloperErrorPage from "./Pages/DeveloperErrorPage";
 
 const routing = createBrowserRouter([
   {
     path: "/",
-    element: <Layout />,
+    element: (
+      <ErrorBoundary>
+        <Layout />
+      </ErrorBoundary>
+    ),
+    errorElement: <DeveloperErrorPage />,
     children: [
       {
         path: "/",
@@ -30,67 +37,98 @@ const routing = createBrowserRouter([
   {
     path: "/login",
     element: (
-      <PublicRoute>
-        <LoginPage />
-      </PublicRoute>
+      <ErrorBoundary>
+        <PublicRoute>
+          <LoginPage />
+        </PublicRoute>
+      </ErrorBoundary>
     ),
+    errorElement: <DeveloperErrorPage />,
   },
   {
     path: "/signUp",
     element: (
-      <PublicRoute>
-        <Registration />
-      </PublicRoute>
+      <ErrorBoundary>
+        <PublicRoute>
+          <Registration />
+        </PublicRoute>
+      </ErrorBoundary>
     ),
+    errorElement: <DeveloperErrorPage />,
   },
   {
     path: "/forget-password",
     element: (
-      <PublicRoute>
-        <ForgetPassword />
-      </PublicRoute>
+      <ErrorBoundary>
+        <PublicRoute>
+          <ForgetPassword />
+        </PublicRoute>
+      </ErrorBoundary>
     ),
+    errorElement: <DeveloperErrorPage />,
   },
   {
     path: "/dashboard",
     element: (
-      <ProtectedRoute>
-        <SharedPortfolioProvider>
-        <ContextProviderWrapper>
-          <DashboardLayout />
-        </ContextProviderWrapper>
-        </SharedPortfolioProvider>
-      </ProtectedRoute>
+      <ErrorBoundary>
+        <ProtectedRoute>
+          <SharedPortfolioProvider>
+            <ContextProviderWrapper>
+              <DashboardLayout />
+            </ContextProviderWrapper>
+          </SharedPortfolioProvider>
+        </ProtectedRoute>
+      </ErrorBoundary>
     ),
+    errorElement: <DeveloperErrorPage />,
     children: [
       {
-        index: true, // default dashboard route
-        element: <DashboardHome />,
+        index: true,
+        element: (
+          <ErrorBoundary>
+            <DashboardHome />
+          </ErrorBoundary>
+        ),
       },
       {
         path: "market",
-        element: <MarketPage />,
+        element: (
+          <ErrorBoundary>
+            <MarketPage />
+          </ErrorBoundary>
+        ),
       },
       {
         path: "portfolio",
-        element: <PortfolioPage />,
+        element: (
+          <ErrorBoundary>
+            <PortfolioPage />
+          </ErrorBoundary>
+        ),
       },
       {
         path: "notifications",
-        element: <Notifications />,
+        element: (
+          <ErrorBoundary>
+            <Notifications />
+          </ErrorBoundary>
+        ),
       },
     ],
   },
   {
     path: "*",
     element: <ErrorPage />,
+    errorElement: <DeveloperErrorPage />,
   },
 ]);
 
 const AppRouter = () => {
   return (
     <AuthProvider>
-      <RouterProvider router={routing} />
+      <ErrorBoundary>
+        <RouterProvider router={routing} />
+      </ErrorBoundary>
     </AuthProvider>
   );
 };

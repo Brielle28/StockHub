@@ -22,6 +22,9 @@ using Microsoft.AspNetCore.RateLimiting;
 using StockHub_Backend.Services.Kafka.PortfolioKafka;
 using StockHub_Backend.Services.PortfolioStockPriceUpdateService;
 using StockHub_Backend.Services.BackgroundTask;
+using StockHub_Backend.Services.Alert;
+using StockHub_Backend.Services.Kafka.Alert;
+using StockHub_Backend.Services.HubSignalR;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -138,6 +141,8 @@ builder.Services.AddScoped<IPortfolioRepository, PortfolioRepository>();
 builder.Services.AddScoped<ICommentRepository, CommentRepository>();
 builder.Services.AddScoped<IStockDataService, StockDataServiceRepository>();
 builder.Services.AddScoped<IStockPriceHub, StockPriceHubRepository>();
+builder.Services.AddScoped<IAlertRepository, AlertRepository>();
+
 
 // =============================================================================
 // DEPENDENCY INJECTION - SERVICES
@@ -147,7 +152,9 @@ builder.Services.AddScoped<IStockPriceHub, StockPriceHubRepository>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IYahooFinanceApiService, YahooFinanceApiService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
-
+builder.Services.AddScoped<IAlertService, AlertService>();
+builder.Services.AddScoped<IPricePollingService, PricePollingService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 // Register singleton services (application-wide single instance)
 builder.Services.AddSingleton<IKafkaProducer, KafkaProducer>();
 builder.Services.AddSingleton<IKafkaProducerService, KafkaProducerService>();
@@ -155,6 +162,16 @@ builder.Services.AddSingleton<IEventPublisher, KafkaEventPublisher>();
 builder.Services.AddSingleton<IPortfolioCacheService, RedisCacheService>();
 builder.Services.AddSingleton<IStockDataCacheService, CacheService>();
 builder.Services.AddScoped<IPortfolioStockPriceUpdateService, PortfolioStockPriceUpdateService>();
+builder.Services.AddSingleton<IKafkaAlertProducer, KafkaAlertProducer>();
+builder.Services.AddScoped<IKafkaAlertConsumer, KafkaAlertConsumer>();
+
+// Register HttpClient for price polling
+builder.Services.AddScoped<IPricePollingService, PricePollingService>();
+// builder.Services.AddHttpClient<IPricePollingService, PricePollingService>(client =>
+// {
+//     client.Timeout = TimeSpan.FromSeconds(30);
+//     client.DefaultRequestHeaders.Add("User-Agent", "StockHub/1.0");
+// });
 
 // =============================================================================
 // BACKGROUND SERVICES
@@ -163,7 +180,8 @@ builder.Services.AddScoped<IPortfolioStockPriceUpdateService, PortfolioStockPric
 // Register Kafka consumer as a background service
 builder.Services.AddHostedService<KafkaConsumerService>();
 builder.Services.AddHostedService<PortfolioStockPriceBackgroundService>();
-
+builder.Services.AddHostedService<AlertPricePollingBackgroundService>();
+builder.Services.AddHostedService<KafkaConsumerBackgroundService>();
 // =============================================================================
 // SIGNALR CONFIGURATION
 // =============================================================================
@@ -209,22 +227,24 @@ builder.Services.AddRateLimiter(options =>
 // =============================================================================
 
 // Configure health checks for monitoring application status
-builder.Services.AddHealthChecks()
-    .AddCheck("redis", () =>
-    {
-        try
-        {
-            var redis = builder.Services.BuildServiceProvider().GetRequiredService<IConnectionMultiplexer>();
-            return redis.IsConnected ?
-                Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy() :
-                Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Unhealthy();
-        }
-        catch
-        {
-            return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Unhealthy();
-        }
-    });
-
+// builder.Services.AddHealthChecks()
+//     .AddCheck("redis", () =>
+//     {
+//         try
+//         {
+//             var redis = builder.Services.BuildServiceProvider().GetRequiredService<IConnectionMultiplexer>();
+//             return redis.IsConnected ?
+//                 Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy() :
+//                 Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Unhealthy();
+//         }
+//         catch
+//         {
+//             return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Unhealthy();
+//         }
+//     });
+// Replace the entire health check section with this simple version:
+// builder.Services.AddHealthChecks()
+//     .AddDbContextCheck<ApplicationDBContext>("database");
 // =============================================================================
 // SWAGGER/API DOCUMENTATION CONFIGURATION
 // =============================================================================
@@ -356,9 +376,10 @@ app.MapControllers();
 // Map SignalR hub with rate limiting
 app.MapHub<StockPriceHub>("/stockhub")
     .RequireRateLimiting("WebSocketPolicy");
+app.MapHub<AlertsHub>("/alertsHub");
 
 // Map health check endpoint for monitoring
-app.MapHealthChecks("/health");
+// app.MapHealthChecks("/health");
 
 // Map WebSocket connection statistics endpoint (if GetConnectionStats method exists)
 app.MapGet("/ws-stats", () => StockPriceHubRepository.GetConnectionStats());

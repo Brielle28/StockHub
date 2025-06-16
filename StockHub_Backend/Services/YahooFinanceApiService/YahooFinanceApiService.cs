@@ -98,7 +98,6 @@ namespace StockHub_Backend.Services.YahooFinanceApiService
         }
 
 
-
         public async Task<List<StockSearchResult>> SearchStocksAsync(string query, int limit)
         {
             try
