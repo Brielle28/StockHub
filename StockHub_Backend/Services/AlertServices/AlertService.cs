@@ -10,7 +10,7 @@ using StockHub_Backend.Interfaces;
 using StockHub_Backend.Models;
 using AlertModel = StockHub_Backend.Models.Alert;
 
-namespace StockHub_Backend.Services.Alert
+namespace StockHub_Backend.Services.Alert.AlertServices
 {
     public class AlertService : IAlertService
     {

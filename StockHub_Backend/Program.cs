@@ -25,6 +25,8 @@ using StockHub_Backend.Services.BackgroundTask;
 using StockHub_Backend.Services.Alert;
 using StockHub_Backend.Services.Kafka.Alert;
 using StockHub_Backend.Services.HubSignalR;
+using StockHub_Backend.Services.AlertServices;
+using StockHub_Backend.Services.Alert.AlertServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -167,11 +169,6 @@ builder.Services.AddScoped<IKafkaAlertConsumer, KafkaAlertConsumer>();
 
 // Register HttpClient for price polling
 builder.Services.AddScoped<IPricePollingService, PricePollingService>();
-// builder.Services.AddHttpClient<IPricePollingService, PricePollingService>(client =>
-// {
-//     client.Timeout = TimeSpan.FromSeconds(30);
-//     client.DefaultRequestHeaders.Add("User-Agent", "StockHub/1.0");
-// });
 
 // =============================================================================
 // BACKGROUND SERVICES

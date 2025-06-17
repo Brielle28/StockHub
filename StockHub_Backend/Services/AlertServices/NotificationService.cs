@@ -7,7 +7,7 @@ using StockHub_Backend.Dtos.Alert;
 using StockHub_Backend.Interfaces;
 using StockHub_Backend.Services.HubSignalR;
 using StockHub_Backend.Services.Kafka.Alert;
-namespace StockHub_Backend.Services.Alert
+namespace StockHub_Backend.Services.Alert.AlertServices
 {
         public class NotificationService : INotificationService
     {

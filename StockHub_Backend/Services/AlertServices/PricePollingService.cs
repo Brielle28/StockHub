@@ -211,7 +211,7 @@ using StockHub_Backend.Models;
 using System.Text.Json;
 using AlertModel = StockHub_Backend.Models.Alert;
 
-namespace StockHub_Backend.Services
+namespace StockHub_Backend.Services.AlertServices
 {
     public class PricePollingService : IPricePollingService
     {

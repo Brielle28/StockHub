@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using StockHub_Backend.Models;
 
 namespace StockHub_Backend.Dtos.Alert
 {
@@ -13,5 +14,8 @@ namespace StockHub_Backend.Dtos.Alert
         public decimal CurrentPrice { get; set; }
         public decimal TargetPrice { get; set; }
         public string Message { get; set; } = string.Empty;
+        public AlertCondition Condition { get; set; } // Add this field
+        public DateTime CreatedAt { get; set; }        // Add this field
+        public DateTime? TriggeredAt { get; set; }     // Add this field
     }
 }

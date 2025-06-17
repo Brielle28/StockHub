@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAlerts } from "../../../Context/AlertsContext";
 import { AlertCircle, Bell, Trash2, TrendingDown, TrendingUp,  } from "lucide-react";
 import { FaEquals } from "react-icons/fa";
+import Toast from "./Toast";
 
 const ActiveAlerts = () => {
   const { activeAlerts, deleteAlert, loading } = useAlerts();
@@ -61,21 +62,6 @@ const ActiveAlerts = () => {
         return "text-gray-400 bg-gray-400/10 border-gray-400/20";
     }
   };
-
-  const getConditionArrow = (condition) => {
-    const conditionText = getConditionText(condition);
-    switch (conditionText) {
-      case "Greater Than":
-        return ">";
-      case "Less Than":
-        return "<";
-      case "Equal To":
-        return "=";
-      default:
-        return "?";
-    }
-  };
-
   return (
     <>
       <div className="p-6">

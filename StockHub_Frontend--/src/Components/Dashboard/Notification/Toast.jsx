@@ -9,12 +9,12 @@ const Toast = ({ message, type, onClose }) => {
 
   const bgColor =
     type === "success"
-      ? "bg-emerald-500"
+      ? "bg-[#D4FB2B]"
       : type === "error"
       ? "bg-red-500"
       : "bg-[#D4FB2B]";
   const textColor =
-    type === "success" || type === "error" ? "text-white" : "text-black";
+    type === "success" || type === "error" ? "text-black" : "text-black";
 
   return (
     <div
