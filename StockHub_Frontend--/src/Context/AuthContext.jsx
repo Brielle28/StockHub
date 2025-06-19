@@ -1,5 +1,4 @@
 // import React, { createContext, useContext, useEffect, useState } from "react";
-// // import axiosInstance from '../Services/axiosInstance';
 // import axios from "axios";
 // import axiosInstance from "../Services/axios";
 
@@ -28,6 +27,7 @@
 //     setUser(res.data);
 //     localStorage.setItem("user", JSON.stringify(res.data));
 //   };
+
 //   const initAuth = async () => {
 //     const accessToken = localStorage.getItem("accessToken");
 //     const refreshToken = localStorage.getItem("refreshToken");
@@ -41,7 +41,6 @@
 //       if (isTokenExpired(accessToken)) {
 //         console.log("Access token expired. Attempting refresh...");
 
-//         // Fixed: Send only the required fields
 //         const response = await axios.post(
 //           `${import.meta.env.VITE_API_BASE_URL}/StockHub/users/refresh-token`,
 //           {
@@ -55,10 +54,8 @@
 //           }
 //         );
 
-//         // Check if response is successful
 //         if (response.status === 200 && response.data.accessToken) {
 //           localStorage.setItem("accessToken", response.data.accessToken);
-//           // Update refresh token if provided
 //           if (response.data.refreshToken) {
 //             localStorage.setItem("refreshToken", response.data.refreshToken);
 //           }
@@ -67,13 +64,11 @@
 //         }
 //       }
 
-//       // Now fetch the logged-in user
 //       await fetchUser();
 //       setIsAuthenticated(true);
 //     } catch (err) {
 //       console.error("Token refresh failed:", err.response?.data || err.message);
 
-//       // Clear invalid tokens
 //       localStorage.removeItem("accessToken");
 //       localStorage.removeItem("refreshToken");
 //       localStorage.removeItem("user");
@@ -84,59 +79,6 @@
 //     }
 //   };
 
-//   // const login = async (username, password) => {
-//   //   setLoading(true);
-//   //   try {
-//   //     const res = await axiosInstance.post("/StockHub/users/login", {
-//   //       username,
-//   //       password,
-//   //     });
-
-//   //     const { accessToken, refreshToken } = res.data;
-//   //     localStorage.setItem("accessToken", accessToken);
-//   //     localStorage.setItem("refreshToken", refreshToken);
-
-//   //     await fetchUser();
-//   //     setIsAuthenticated(true);
-
-//   //     return { success: true };
-//   //   } catch (err) {
-//   //     const message = err.response?.data?.message || "Login failed";
-//   //     return { success: false, error: message };
-//   //   } finally {
-//   //     setLoading(false);
-//   //   }
-//   // };
-
-//   // const register = async (userData) => {
-//   //   setLoading(true);
-//   //   try {
-//   //     const res = await axiosInstance.post(
-//   //       "/StockHub/users/register",
-//   //       userData
-//   //     );
-//   //     const { accessToken, refreshToken } = res.data;
-
-//   //     localStorage.setItem("accessToken", accessToken);
-//   //     localStorage.setItem("refreshToken", refreshToken);
-
-//   //     await fetchUser();
-//   //     setIsAuthenticated(true);
-
-//   //     return { success: true };
-//   //   } catch (err) {
-//   //     const errors = err.response?.data?.errors || {};
-//   //     return {
-//   //       success: false,
-//   //       error: "Registration failed",
-//   //       details: errors,
-//   //     };
-//   //   } finally {
-//   //     setLoading(false);
-//   //   }
-//   // };
-
-//   // In your AuthContext.js
 //   const login = async (username, password) => {
 //     setLoading(true);
 //     try {
@@ -154,18 +96,26 @@
 
 //       return {
 //         success: true,
-//         user: res.data.user, // if available
+//         user: res.data.user,
 //       };
 //     } catch (err) {
-//       // Enhanced error handling
+//       console.error("Login error:", err.response?.data);
+      
 //       const errorData = err.response?.data || {};
 //       const message = errorData.message || "Login failed";
-//       const errors = errorData.errors || {};
+      
+//       // Handle validation errors - could be in different formats
+//       let validationErrors = {};
+//       if (errorData.errors) {
+//         validationErrors = errorData.errors;
+//       } else if (errorData.details) {
+//         validationErrors = errorData.details;
+//       }
 
 //       return {
 //         success: false,
 //         error: message,
-//         validationErrors: errors, // for field-specific errors
+//         validationErrors: validationErrors,
 //       };
 //     } finally {
 //       setLoading(false);
@@ -179,8 +129,8 @@
 //         "/StockHub/users/register",
 //         userData
 //       );
+      
 //       const { accessToken, refreshToken } = res.data;
-
 //       localStorage.setItem("accessToken", accessToken);
 //       localStorage.setItem("refreshToken", refreshToken);
 
@@ -189,18 +139,28 @@
 
 //       return {
 //         success: true,
-//         user: res.data.user, // if available
+//         user: res.data.user,
 //       };
 //     } catch (err) {
-//       // Enhanced error handling
+//       console.error("Registration error:", err.response?.data);
+      
 //       const errorData = err.response?.data || {};
 //       const message = errorData.message || "Registration failed";
-//       const errors = errorData.errors || {};
+      
+//       // Handle validation errors - could be in different formats
+//       let validationErrors = {};
+//       if (errorData.errors) {
+//         validationErrors = errorData.errors;
+//       } else if (errorData.details) {
+//         validationErrors = errorData.details;
+//       } else if (errorData.validationErrors) {
+//         validationErrors = errorData.validationErrors;
+//       }
 
 //       return {
 //         success: false,
 //         error: message,
-//         validationErrors: errors, // for field-specific errors
+//         validationErrors: validationErrors,
 //       };
 //     } finally {
 //       setLoading(false);
@@ -275,6 +235,10 @@ const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Add this new state to track when auth is ready
+  const [authReady, setAuthReady] = useState(false);
+  // Add this to expose the access token reactively
+  const [accessToken, setAccessToken] = useState(null);
 
   const decodeToken = (token) => {
     try {
@@ -296,22 +260,25 @@ const AuthProvider = ({ children }) => {
   };
 
   const initAuth = async () => {
-    const accessToken = localStorage.getItem("accessToken");
+    const storedAccessToken = localStorage.getItem("accessToken");
     const refreshToken = localStorage.getItem("refreshToken");
 
-    if (!accessToken || !refreshToken) {
+    if (!storedAccessToken || !refreshToken) {
       setLoading(false);
+      setAuthReady(true); // Auth is ready even if no token
       return;
     }
 
     try {
-      if (isTokenExpired(accessToken)) {
+      let validToken = storedAccessToken;
+
+      if (isTokenExpired(storedAccessToken)) {
         console.log("Access token expired. Attempting refresh...");
 
         const response = await axios.post(
           `${import.meta.env.VITE_API_BASE_URL}/StockHub/users/refresh-token`,
           {
-            accessToken: accessToken,
+            accessToken: storedAccessToken,
             refreshToken: refreshToken,
           },
           {
@@ -322,6 +289,7 @@ const AuthProvider = ({ children }) => {
         );
 
         if (response.status === 200 && response.data.accessToken) {
+          validToken = response.data.accessToken;
           localStorage.setItem("accessToken", response.data.accessToken);
           if (response.data.refreshToken) {
             localStorage.setItem("refreshToken", response.data.refreshToken);
@@ -331,6 +299,8 @@ const AuthProvider = ({ children }) => {
         }
       }
 
+      // Set the valid token in state
+      setAccessToken(validToken);
       await fetchUser();
       setIsAuthenticated(true);
     } catch (err) {
@@ -339,10 +309,12 @@ const AuthProvider = ({ children }) => {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("user");
-
+      
+      setAccessToken(null);
       logout();
     } finally {
       setLoading(false);
+      setAuthReady(true); // Auth initialization is complete
     }
   };
 
@@ -354,9 +326,12 @@ const AuthProvider = ({ children }) => {
         password,
       });
 
-      const { accessToken, refreshToken } = res.data;
-      localStorage.setItem("accessToken", accessToken);
+      const { accessToken: newAccessToken, refreshToken } = res.data;
+      localStorage.setItem("accessToken", newAccessToken);
       localStorage.setItem("refreshToken", refreshToken);
+      
+      // Update the reactive token state
+      setAccessToken(newAccessToken);
 
       await fetchUser();
       setIsAuthenticated(true);
@@ -367,11 +342,10 @@ const AuthProvider = ({ children }) => {
       };
     } catch (err) {
       console.error("Login error:", err.response?.data);
-      
+     
       const errorData = err.response?.data || {};
       const message = errorData.message || "Login failed";
-      
-      // Handle validation errors - could be in different formats
+     
       let validationErrors = {};
       if (errorData.errors) {
         validationErrors = errorData.errors;
@@ -396,10 +370,13 @@ const AuthProvider = ({ children }) => {
         "/StockHub/users/register",
         userData
       );
-      
-      const { accessToken, refreshToken } = res.data;
-      localStorage.setItem("accessToken", accessToken);
+     
+      const { accessToken: newAccessToken, refreshToken } = res.data;
+      localStorage.setItem("accessToken", newAccessToken);
       localStorage.setItem("refreshToken", refreshToken);
+      
+      // Update the reactive token state
+      setAccessToken(newAccessToken);
 
       await fetchUser();
       setIsAuthenticated(true);
@@ -410,11 +387,10 @@ const AuthProvider = ({ children }) => {
       };
     } catch (err) {
       console.error("Registration error:", err.response?.data);
-      
+     
       const errorData = err.response?.data || {};
       const message = errorData.message || "Registration failed";
-      
-      // Handle validation errors - could be in different formats
+     
       let validationErrors = {};
       if (errorData.errors) {
         validationErrors = errorData.errors;
@@ -435,13 +411,13 @@ const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    const accessToken = localStorage.getItem("accessToken");
+    const currentAccessToken = accessToken || localStorage.getItem("accessToken");
     const refreshToken = localStorage.getItem("refreshToken");
 
     try {
-      if (accessToken && refreshToken) {
+      if (currentAccessToken && refreshToken) {
         await axiosInstance.post("/StockHub/users/logout", {
-          accessToken,
+          accessToken: currentAccessToken,
           refreshToken,
         });
       }
@@ -451,6 +427,7 @@ const AuthProvider = ({ children }) => {
       localStorage.clear();
       setUser(null);
       setIsAuthenticated(false);
+      setAccessToken(null); // Clear the reactive token
     }
   };
 
@@ -473,6 +450,8 @@ const AuthProvider = ({ children }) => {
     user,
     loading,
     isAuthenticated,
+    authReady, // Expose this to know when auth is initialized
+    accessToken, // Expose the reactive access token
     login,
     register,
     logout,

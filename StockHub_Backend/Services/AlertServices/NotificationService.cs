@@ -9,7 +9,7 @@ using StockHub_Backend.Services.HubSignalR;
 using StockHub_Backend.Services.Kafka.Alert;
 namespace StockHub_Backend.Services.Alert.AlertServices
 {
-        public class NotificationService : INotificationService
+    public class NotificationService : INotificationService
     {
         private readonly IHubContext<AlertsHub> _hubContext;
         private readonly IKafkaAlertProducer _kafkaProducer;
@@ -33,6 +33,9 @@ namespace StockHub_Backend.Services.Alert.AlertServices
                 await _hubContext.Clients.Group($"User_{alertTriggered.UserId}")
                     .SendAsync("AlertTriggered", alertTriggered);
 
+                // await _hubContext.Clients.User(alertTriggered.UserId.ToString())
+                //     .SendAsync("AlertTriggered", alertTriggered);
+
                 _logger.LogInformation("Alert notification sent to user {UserId} for symbol {Symbol}",
                     alertTriggered.UserId, alertTriggered.Symbol);
             }
@@ -55,7 +58,7 @@ namespace StockHub_Backend.Services.Alert.AlertServices
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing triggered alert for user {UserId}", alertTriggered.UserId);
-                
+
                 // Fallback: Send notification directly if Kafka fails
                 await SendAlertNotificationAsync(alertTriggered);
             }

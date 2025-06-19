@@ -34,14 +34,14 @@
 //                 BootstrapServers = configuration.GetValue<string>("Kafka:BootstrapServers") ?? "localhost:9092",
 //                 ClientId = configuration.GetValue<string>("Kafka:ClientId") ?? "StockHub",
 //                 AutoOffsetReset = AutoOffsetReset.Earliest,
-//                 EnableAutoCommit = false,
+//                 EnableAutoCommit = false, // Manual commit for better control
 //                 SessionTimeoutMs = 30000,
 //                 HeartbeatIntervalMs = 10000,
 //                 MaxPollIntervalMs = 300000
 //             };
 
 //             _consumer = new ConsumerBuilder<string, string>(config)
-//             .SetErrorHandler((_, e) => _logger.LogError("Kafka consumer error: {Error}", e.Reason))
+//                 .SetErrorHandler((_, e) => _logger.LogError("Kafka consumer error: {Error}", e.Reason))
 //                 .SetPartitionsAssignedHandler((c, partitions) =>
 //                 {
 //                     _logger.LogInformation("Assigned partitions: [{Partitions}]",
@@ -52,11 +52,7 @@
 //                     _logger.LogInformation("Revoked partitions: [{Partitions}]",
 //                         string.Join(", ", partitions.Select(p => $"{p.Topic}:[{p.Partition}]")));
 //                 })
-//             .Build();
-
-//             // _alertsTopic = new {
-//             //     configuration["Kafka:Topic:AlertsTriggeredTopic"] ?? "alerts-triggered"
-//             // };
+//                 .Build();
 //         }
 
 //         public async Task StartConsumingAsync(CancellationToken cancellationToken)
@@ -70,12 +66,14 @@
 //                 {
 //                     try
 //                     {
-//                         // var consumeResult = _consumer.Consume(cancellationToken);
+//                         // Use timeout to prevent indefinite blocking
 //                         var consumeResult = _consumer.Consume(TimeSpan.FromSeconds(1));
-//                         // if (consumeResult?.Message != null)
+
 //                         if (consumeResult != null && !consumeResult.IsPartitionEOF)
 //                         {
-//                             await ProcessMessageAsync(consumeResult.Message);
+//                             await ProcessMessageAsync(consumeResult, cancellationToken);
+
+//                             // Commit the offset after successful processing
 //                             _consumer.Commit(consumeResult);
 //                         }
 
@@ -84,35 +82,76 @@
 //                     }
 //                     catch (ConsumeException ex)
 //                     {
-//                         _logger.LogError(ex, "Error consuming message from Kafka");
+//                         _logger.LogError(ex, "Error consuming message: {Error}", ex.Error.Reason);
+
+//                         // Wait before retrying on consume errors
+//                         await Task.Delay(1000, cancellationToken);
+//                     }
+//                     catch (OperationCanceledException)
+//                     {
+//                         _logger.LogInformation("Kafka consumer cancellation requested");
+//                         break;
+//                     }
+//                     catch (Exception ex)
+//                     {
+//                         _logger.LogError(ex, "Unexpected error in Kafka alert consumer");
+
+//                         // Wait before retrying to avoid tight loop on persistent errors
+//                         await Task.Delay(5000, cancellationToken);
 //                     }
 //                 }
 //             }
-//             catch (OperationCanceledException)
-//             {
-//                 _logger.LogInformation("Kafka consumer cancelled");
-//             }
 //             finally
 //             {
-//                 _consumer.Close();
+//                 try
+//                 {
+//                     _consumer.Close();
+//                     _logger.LogInformation("Kafka consumer closed");
+//                 }
+//                 catch (Exception ex)
+//                 {
+//                     _logger.LogError(ex, "Error closing Kafka consumer");
+//                 }
 //             }
 //         }
 
-//         private async Task ProcessMessageAsync(Message<string, string> message)
+//         private async Task ProcessMessageAsync(ConsumeResult<string, string> consumeResult, CancellationToken cancellationToken)
 //         {
 //             try
 //             {
-//                 var alertTriggered = JsonSerializer.Deserialize<AlertTriggeredDTO>(message.Value);
-//                 if (alertTriggered != null)
+//                 _logger.LogDebug("Processing alert message from partition {Partition}, offset {Offset}",
+//                     consumeResult.Partition, consumeResult.Offset);
+
+//                 // Deserialize the alert message using your existing DTO
+//                 var alertTriggered = JsonSerializer.Deserialize<AlertTriggeredDTO>(consumeResult.Message.Value);
+//                 if (alertTriggered == null)
 //                 {
-//                     using var scope = _serviceProvider.CreateScope();
-//                     var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
-//                     await notificationService.SendAlertNotificationAsync(alertTriggered);
+//                     _logger.LogWarning("Failed to deserialize alert message from offset {Offset}", consumeResult.Offset);
+//                     return;
 //                 }
+
+//                 // Create a scope for scoped services (important for database contexts)
+//                 using var scope = _serviceProvider.CreateScope();
+
+//                 // Get required services from the scope using your existing service
+//                 var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+
+//                 // Process the alert using your existing method
+//                 await notificationService.SendAlertNotificationAsync(alertTriggered);
+
+//                 _logger.LogDebug("Successfully processed alert message from offset {Offset}", consumeResult.Offset);
+//             }
+//             catch (JsonException ex)
+//             {
+//                 _logger.LogError(ex, "Error deserializing alert message from offset {Offset}: {Message}",
+//                     consumeResult.Offset, ex.Message);
+//                 // Don't rethrow for deserialization errors - message is invalid
 //             }
 //             catch (Exception ex)
 //             {
-//                 _logger.LogError(ex, "Error processing Kafka message: {Message}", message.Value);
+//                 _logger.LogError(ex, "Error processing alert message from offset {Offset}: {Message}",
+//                     consumeResult.Offset, ex.Message);
+//                 throw; // Re-throw to handle at consumer level
 //             }
 //         }
 
@@ -184,6 +223,10 @@ namespace StockHub_Backend.Services.Kafka.Alert
             _consumer.Subscribe(_alertsTopic);
             _logger.LogInformation("Started consuming messages from topic: {Topic}", _alertsTopic);
 
+            // ADD THIS DEBUG LOG
+            _logger.LogInformation("Kafka Consumer Configuration: BootstrapServers={BootstrapServers}, GroupId={GroupId}, Topic={Topic}",
+                _consumer.Name, _consumer.Assignment, _alertsTopic);
+
             try
             {
                 while (!cancellationToken.IsCancellationRequested)
@@ -195,10 +238,22 @@ namespace StockHub_Backend.Services.Kafka.Alert
 
                         if (consumeResult != null && !consumeResult.IsPartitionEOF)
                         {
+                            // ADD THIS DEBUG LOG
+                            _logger.LogInformation("📨 Received Kafka message: Topic={Topic}, Partition={Partition}, Offset={Offset}, Key={Key}",
+                                consumeResult.Topic, consumeResult.Partition, consumeResult.Offset, consumeResult.Message.Key);
+
                             await ProcessMessageAsync(consumeResult, cancellationToken);
-                            
+
                             // Commit the offset after successful processing
                             _consumer.Commit(consumeResult);
+
+                            // ADD THIS DEBUG LOG
+                            _logger.LogInformation("✅ Successfully committed offset {Offset}", consumeResult.Offset);
+                        }
+                        else if (consumeResult?.IsPartitionEOF == true)
+                        {
+                            // ADD THIS DEBUG LOG
+                            _logger.LogDebug("Reached end of partition {Partition}", consumeResult.Partition);
                         }
 
                         // Small delay to prevent CPU spinning
@@ -206,8 +261,8 @@ namespace StockHub_Backend.Services.Kafka.Alert
                     }
                     catch (ConsumeException ex)
                     {
-                        _logger.LogError(ex, "Error consuming message: {Error}", ex.Error.Reason);
-                        
+                        _logger.LogError(ex, "❌ Error consuming message: {Error}", ex.Error.Reason);
+
                         // Wait before retrying on consume errors
                         await Task.Delay(1000, cancellationToken);
                     }
@@ -218,8 +273,8 @@ namespace StockHub_Backend.Services.Kafka.Alert
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Unexpected error in Kafka alert consumer");
-                        
+                        _logger.LogError(ex, "❌ Unexpected error in Kafka alert consumer");
+
                         // Wait before retrying to avoid tight loop on persistent errors
                         await Task.Delay(5000, cancellationToken);
                     }
@@ -243,37 +298,41 @@ namespace StockHub_Backend.Services.Kafka.Alert
         {
             try
             {
-                _logger.LogDebug("Processing alert message from partition {Partition}, offset {Offset}",
+                _logger.LogInformation("🔄 Processing alert message from partition {Partition}, offset {Offset}",
                     consumeResult.Partition, consumeResult.Offset);
 
                 // Deserialize the alert message using your existing DTO
                 var alertTriggered = JsonSerializer.Deserialize<AlertTriggeredDTO>(consumeResult.Message.Value);
                 if (alertTriggered == null)
                 {
-                    _logger.LogWarning("Failed to deserialize alert message from offset {Offset}", consumeResult.Offset);
+                    _logger.LogWarning("❌ Failed to deserialize alert message from offset {Offset}", consumeResult.Offset);
                     return;
                 }
 
+                // ADD THIS DEBUG LOG
+                _logger.LogInformation("📤 About to send SignalR notification for user {UserId}, symbol {Symbol}",
+                    alertTriggered.UserId, alertTriggered.Symbol);
+
                 // Create a scope for scoped services (important for database contexts)
                 using var scope = _serviceProvider.CreateScope();
-                
+
                 // Get required services from the scope using your existing service
                 var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
-                
+
                 // Process the alert using your existing method
                 await notificationService.SendAlertNotificationAsync(alertTriggered);
 
-                _logger.LogDebug("Successfully processed alert message from offset {Offset}", consumeResult.Offset);
+                _logger.LogInformation("✅ Successfully processed alert message from offset {Offset}", consumeResult.Offset);
             }
             catch (JsonException ex)
             {
-                _logger.LogError(ex, "Error deserializing alert message from offset {Offset}: {Message}",
+                _logger.LogError(ex, "❌ Error deserializing alert message from offset {Offset}: {Message}",
                     consumeResult.Offset, ex.Message);
                 // Don't rethrow for deserialization errors - message is invalid
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing alert message from offset {Offset}: {Message}",
+                _logger.LogError(ex, "❌ Error processing alert message from offset {Offset}: {Message}",
                     consumeResult.Offset, ex.Message);
                 throw; // Re-throw to handle at consumer level
             }

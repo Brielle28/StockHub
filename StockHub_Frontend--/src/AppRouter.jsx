@@ -72,11 +72,9 @@ const routing = createBrowserRouter([
     element: (
       <ErrorBoundary>
         <ProtectedRoute>
-          <SharedPortfolioProvider>
-            <ContextProviderWrapper>
-              <DashboardLayout />
-            </ContextProviderWrapper>
-          </SharedPortfolioProvider>
+          <ContextProviderWrapper>
+            <DashboardLayout />
+          </ContextProviderWrapper>
         </ProtectedRoute>
       </ErrorBoundary>
     ),
