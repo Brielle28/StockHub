@@ -217,3 +217,5 @@ C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\Poll
 C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\Polly.Core.dll
 C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\Polly.Extensions.Http.dll
 C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\System.Net.WebSockets.WebSocketProtocol.dll
+C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\DotNetEnv.dll
+C:\Users\Brielle28\Desktop\Solve\StockHub\StockHub_Backend\bin\Debug\net9.0\Sprache.dll
