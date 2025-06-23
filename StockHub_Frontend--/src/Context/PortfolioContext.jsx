@@ -7,9 +7,10 @@ import {
 } from "react";
 import AddStockModal from "../Components/Dashboard/Modals/AddStockModal";
 import CreatePortfolioModal from "../Components/Dashboard/Modals/CreatePortfolioModal";
-import AddToPortfolioModal from "../Components/Dashboard/Modals/AddToPortfolioModal";
+// import AddToPortfolioModal from "../Components/Dashboard/Modals/AddToPortfolioModal";
 import * as portfolioService from "../Services/portfolioService";
 import { useLocation } from "react-router-dom";
+import AddToPortfolioMarketModal from "../Components/Dashboard/Modals/AddToPortfolioMarketModal";
 
 export const SharedPortfolioContext = createContext();
 
@@ -93,49 +94,121 @@ const SharedPortfolioProvider = ({ children }) => {
     }
   };
 
-  // Modify handleCreatePortfolio to return the new portfolio object
   const handleCreatePortfolio = async (portfolioDto) => {
     try {
-      const newPortfolio = await portfolioService.createPortfolio(portfolioDto);
+      // Create the portfolio
+      await portfolioService.createPortfolio(portfolioDto);
+
+      // Refresh portfolios to get the latest data including the new portfolio
       const updated = await portfolioService.getUserPortfolios();
       setPortfolios(updated);
-      setSelectedPortfolioId(newPortfolio.id);
-      return newPortfolio; // Return the created portfolio
+
+      // Find the newly created portfolio from the updated list
+      // This is more reliable than depending on the API response
+      const createdPortfolio = updated.find(
+        (p) =>
+          p.name === portfolioDto.name &&
+          p.description === portfolioDto.description
+      );
+
+      if (createdPortfolio) {
+        setSelectedPortfolioId(createdPortfolio.id);
+        return createdPortfolio;
+      } else {
+        // Fallback: if we can't find it, return the last portfolio (assuming it's the newest)
+        const lastPortfolio = updated[updated.length - 1];
+        setSelectedPortfolioId(lastPortfolio.id);
+        return lastPortfolio;
+      }
     } catch (err) {
       setError("Failed to create portfolio");
       console.error(err);
-      throw err; // rethrow error to allow caller to handle it
+      throw err;
     }
   };
 
-  // Fixed function - removed unused parameters and unused helper function
   const addStockWithOptionalPortfolio = async ({
     createNew,
     newPortfolioName,
+    newPortfolioDescription,
     selectedPortfolioId,
     stockData,
+    originalStock,
   }) => {
     try {
+      let targetPortfolioId;
+
       if (createNew) {
-        // 1. Create new portfolio and wait for the returned portfolio
-        const newPortfolio = await handleCreatePortfolio({
+        console.log("Creating new portfolio with:", {
           name: newPortfolioName,
+          description: newPortfolioDescription,
         });
 
-        // 2. Add stock to the newly created portfolio using the stockData directly
-        await portfolioService.addStockToPortfolio(newPortfolio.id, stockData);
+        const newPortfolio = await handleCreatePortfolio({
+          name: newPortfolioName,
+          description: newPortfolioDescription,
+        });
+
+        console.log("New portfolio created:", newPortfolio);
+
+        // Double-check that we have a valid portfolio ID
+        if (!newPortfolio || !newPortfolio.id) {
+          throw new Error("Failed to create portfolio or get portfolio ID");
+        }
+
+        targetPortfolioId = newPortfolio.id;
       } else {
-        // Just add stock to existing portfolio using the stockData directly
-        await portfolioService.addStockToPortfolio(selectedPortfolioId, stockData);
+        if (!selectedPortfolioId) {
+          throw new Error("No portfolio selected");
+        }
+        targetPortfolioId = selectedPortfolioId;
       }
+
+      // Ensure we have a valid portfolio ID before proceeding
+      if (!targetPortfolioId) {
+        throw new Error("Failed to get valid portfolio ID");
+      }
+
+      console.log("Target portfolio ID:", targetPortfolioId);
+
+      // Prepare stock data for the backend
+      const preparedStockData = {
+        symbol: stockData.symbol,
+        quantity: stockData.quantity,
+        purchasePrice: stockData.purchasePrice,
+        purchaseDate: stockData.purchaseDate,
+        currentPrice: stockData.currentPrice,
+        previousClose: stockData.previousClose,
+        companyName:
+          stockData.companyName ||
+          originalStock?.companyName ||
+          originalStock?.name,
+        currency: stockData.currency || originalStock?.currency || "USD",
+        volume: stockData.volume || originalStock?.volume,
+        change: stockData.change || originalStock?.change,
+        changePercent: stockData.changePercent || originalStock?.changePercent,
+      };
+
+      console.log("Prepared stock data:", preparedStockData);
+
+      // Add stock to the portfolio
+      await portfolioService.addStockToPortfolio(
+        targetPortfolioId,
+        preparedStockData
+      );
 
       // Refresh portfolios after adding stock
       const updated = await portfolioService.getUserPortfolios();
       setPortfolios(updated);
+
+      // Set the portfolio as selected if it was newly created
+      if (createNew) {
+        setSelectedPortfolioId(targetPortfolioId);
+      }
     } catch (err) {
+      console.error("Error in addStockWithOptionalPortfolio:", err);
       setError("Failed to add stock to portfolio");
-      console.error(err);
-      throw err; // Re-throw so the modal can handle it
+      throw err;
     }
   };
 
@@ -245,11 +318,17 @@ const SharedPortfolioProvider = ({ children }) => {
         onClose={closeCreatePortfolioModal}
         onCreate={handleCreatePortfolio}
       />
-      <AddToPortfolioModal
+      {/* <AddToPortfolioModal
         isOpen={addToPortfolioModalOpen}
         stock={currentStockData}
         onClose={closeAddToPortfolioModal}
         onAdd={handleAddStock}
+      /> */}
+      <AddToPortfolioMarketModal
+        isOpen={addToPortfolioModalOpen}
+        stock={currentStockData}
+        onClose={closeAddToPortfolioModal}
+        onAdd={addStockWithOptionalPortfolio} // Use the correct function
       />
     </SharedPortfolioContext.Provider>
   );

@@ -5,35 +5,22 @@ import { useMarketData } from "../../../Context/MarketDataContext";
 import StockQuoteSection from "./StockQuoteSection";
 import StockHistorySection from "./StockHistorySection";
 import StockNewsSection from "./StockNewsSection";
-import AddToPortfolioMarketModal from "../Modals/AddToPortfolioMarketModal";
 import StockSearchSection from "./StockSearchSection";
 
 export default function MarketPage() {
-  const { addStockWithOptionalPortfolio } = useSharedPortfolio();
+  const { openAddToPortfolioModal } = useSharedPortfolio();
   const marketData = useMarketData();
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [selectedStock, setSelectedStock] = useState(null);
-  const [showAddToPortfolioModal, setShowAddToPortfolioModal] = useState(false);
-  const [stockToAdd, setStockToAdd] = useState(null);
 
   const handleStockSelect = (stock) => {
     setSelectedStock(stock);
   };
 
   const handleAddToPortfolio = (stock) => {
-    setStockToAdd(stock);
-    setShowAddToPortfolioModal(true);
-  };
-
-  const handlePortfolioAdd = async (portfolioData) => {
-    try {
-      await addStockWithOptionalPortfolio(portfolioData);
-    } catch (error) {
-      console.error("Error adding stock to portfolio:", error);
-      throw error;
-    }
+    openAddToPortfolioModal(stock);
   };
 
   return (
@@ -72,14 +59,11 @@ export default function MarketPage() {
                 onAddToPortfolio={handleAddToPortfolio}
                 marketData={marketData}
               />
-              <StockHistorySection 
-                stock={selectedStock} 
+              <StockHistorySection
+                stock={selectedStock}
                 marketData={marketData}
               />
-              <StockNewsSection 
-                stock={selectedStock} 
-                marketData={marketData}
-              />
+              <StockNewsSection stock={selectedStock} marketData={marketData} />
             </>
           )}
 
@@ -97,14 +81,6 @@ export default function MarketPage() {
           )}
         </div>
       </div>
-
-      {showAddToPortfolioModal && (
-        <AddToPortfolioMarketModal
-          stock={stockToAdd}
-          onClose={() => setShowAddToPortfolioModal(false)}
-          onAdd={handlePortfolioAdd}
-        />
-      )}
     </div>
   );
 }

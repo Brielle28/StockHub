@@ -2,10 +2,16 @@ import { useState, useEffect } from "react";
 import { FiLoader, FiAlertCircle, FiCheckCircle, FiX } from "react-icons/fi";
 import { useSharedPortfolio } from "../../../Context/PortfolioContext";
 
-const AddToPortfolioMarketModal = ({ stock, onClose, onAdd }) => {
+const AddToPortfolioMarketModal = ({
+  stock,
+  onClose,
+  onAdd,
+  isOpen = false,
+}) => {
   const { portfolios, loading: contextLoading } = useSharedPortfolio();
   const [selectedPortfolio, setSelectedPortfolio] = useState("");
   const [newPortfolioName, setNewPortfolioName] = useState("");
+  const [newPortfolioDescription, setNewPortfolioDescription] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [purchasePrice, setPurchasePrice] = useState(0);
@@ -30,6 +36,10 @@ const AddToPortfolioMarketModal = ({ stock, onClose, onAdd }) => {
     }
   }, [stock]);
 
+  if (!isOpen || !stock) {
+    return null;
+  }
+
   // Filter portfolios based on search query
   const filteredPortfolios = portfolios.filter((portfolio) =>
     portfolio.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -51,6 +61,15 @@ const AddToPortfolioMarketModal = ({ stock, onClose, onAdd }) => {
       errors.portfolioName = "Portfolio name must be at least 2 characters";
     }
 
+    if (createNew && !newPortfolioDescription.trim()) {
+      errors.portfolioDescription = "Portfolio description is required";
+    }
+
+    if (createNew && newPortfolioDescription.trim().length < 5) {
+      errors.portfolioDescription =
+        "Portfolio description must be at least 5 characters";
+    }
+
     if (!quantity || quantity < 1) {
       errors.quantity = "Quantity must be at least 1";
     }
@@ -62,7 +81,6 @@ const AddToPortfolioMarketModal = ({ stock, onClose, onAdd }) => {
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
-
   const handleSubmit = async () => {
     // Clear previous states
     setError(null);
@@ -83,16 +101,25 @@ const AddToPortfolioMarketModal = ({ stock, onClose, onAdd }) => {
         purchasePrice: parseFloat(purchasePrice),
         purchaseDate: new Date().toISOString(),
         currentPrice: stock?.currentPrice || 0,
-        previousClose: stock?.previousClose || 0
+        previousClose: stock?.previousClose || 0,
+        // Include other stock properties that might be needed
+        companyName: stock?.companyName || stock?.name,
+        currency: stock?.currency,
+        volume: stock?.volume,
+        change: stock?.change,
+        changePercent: stock?.changePercent,
       };
 
       const portfolioData = {
         createNew,
         newPortfolioName: createNew ? newPortfolioName.trim() : null,
+        newPortfolioDescription: createNew
+          ? newPortfolioDescription.trim()
+          : null,
         selectedPortfolioId: createNew ? null : selectedPortfolio,
         stockData: stockData,
         // Include original stock object for any additional context needed
-        originalStock: stock
+        originalStock: stock,
       };
 
       await onAdd(portfolioData);
@@ -113,9 +140,19 @@ const AddToPortfolioMarketModal = ({ stock, onClose, onAdd }) => {
       setIsSubmitting(false);
     }
   };
-
   const handleClose = () => {
     if (!isSubmitting) {
+      // ✅ Reset all form state when closing
+      setSelectedPortfolio("");
+      setNewPortfolioName("");
+      setNewPortfolioDescription("");
+      setSearchQuery("");
+      setQuantity(1);
+      setPurchasePrice(0);
+      setCreateNew(false);
+      setError(null);
+      setSuccess(false);
+      setValidationErrors({});
       onClose();
     }
   };
@@ -127,7 +164,9 @@ const AddToPortfolioMarketModal = ({ stock, onClose, onAdd }) => {
         <div className="bg-[#111111] bg-opacity-90 p-6 rounded-xl w-full max-w-sm border border-gray-700 shadow-xl backdrop-filter backdrop-blur-md">
           <div className="text-center">
             <FiCheckCircle className="w-12 h-12 sm:w-16 sm:h-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-lg sm:text-xl font-bold mb-2 text-gray-300">Success!</h2>
+            <h2 className="text-lg sm:text-xl font-bold mb-2 text-gray-300">
+              Success!
+            </h2>
             <p className="text-sm sm:text-base text-gray-400 mb-4">
               Successfully added {stock?.symbol} to{" "}
               {createNew ? "new" : "existing"} portfolio
@@ -142,7 +181,6 @@ const AddToPortfolioMarketModal = ({ stock, onClose, onAdd }) => {
   }
 
   return (
-    // fixed inset-0  backdrop-blur-sm flex items-center justify-center z-50
     <div className="fixed inset-0 bg-transparent backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
       <div className="bg-[#111111] bg-opacity-90 rounded-xl w-full max-w-md border border-gray-700 shadow-xl backdrop-filter backdrop-blur-md max-h-[95vh] sm:max-h-[90vh] flex flex-col">
         {/* Fixed Header */}
@@ -187,14 +225,13 @@ const AddToPortfolioMarketModal = ({ stock, onClose, onAdd }) => {
                   {stock?.volume && (
                     <span>Vol: {stock.volume.toLocaleString()}</span>
                   )}
-                  {stock?.currency && (
-                    <span>Currency: {stock.currency}</span>
-                  )}
+                  {stock?.currency && <span>Currency: {stock.currency}</span>}
                   {stock?.lastUpdated && (
                     <span className="hidden sm:inline">
-                      Updated: {new Date(stock.lastUpdated).toLocaleTimeString('en-US', {
-                        hour: '2-digit',
-                        minute: '2-digit',
+                      Updated:{" "}
+                      {new Date(stock.lastUpdated).toLocaleTimeString("en-US", {
+                        hour: "2-digit",
+                        minute: "2-digit",
                       })}
                     </span>
                   )}
@@ -202,7 +239,7 @@ const AddToPortfolioMarketModal = ({ stock, onClose, onAdd }) => {
               </div>
               <div className="text-right flex-shrink-0">
                 <div className="text-base sm:text-lg font-semibold text-gray-300">
-                  ${stock?.currentPrice?.toFixed(2) || 'N/A'}
+                  ${stock?.currentPrice?.toFixed(2) || "N/A"}
                 </div>
                 {stock?.change !== undefined && (
                   <div
@@ -211,7 +248,8 @@ const AddToPortfolioMarketModal = ({ stock, onClose, onAdd }) => {
                     }`}
                   >
                     {stock?.change >= 0 ? "+" : ""}
-                    {stock?.change?.toFixed(2)} ({stock?.changePercent?.toFixed(2)}%)
+                    {stock?.change?.toFixed(2)} (
+                    {stock?.changePercent?.toFixed(2)}%)
                   </div>
                 )}
                 {stock?.previousClose && (
@@ -257,32 +295,71 @@ const AddToPortfolioMarketModal = ({ stock, onClose, onAdd }) => {
             </div>
 
             {createNew ? (
-              <div>
-                <input
-                  className={`w-full bg-[#111111] bg-opacity-70 border rounded-lg p-2 sm:p-3 text-sm sm:text-base text-gray-300 transition-colors ${
-                    validationErrors.portfolioName
-                      ? "border-red-500 focus:border-red-400"
-                      : "border-gray-700 focus:border-[#d4fb2b]"
-                  }`}
-                  placeholder="New portfolio name"
-                  value={newPortfolioName}
-                  onChange={(e) => {
-                    setNewPortfolioName(e.target.value);
-                    if (validationErrors.portfolioName) {
-                      setValidationErrors((prev) => ({
-                        ...prev,
-                        portfolioName: null,
-                      }));
-                    }
-                  }}
-                  disabled={isSubmitting}
-                />
-                {validationErrors.portfolioName && (
-                  <div className="text-red-400 text-xs mt-1 flex items-center gap-1">
-                    <FiAlertCircle className="w-3 h-3" />
-                    {validationErrors.portfolioName}
-                  </div>
-                )}
+              <div className="space-y-4">
+                {/* Portfolio Name Input */}
+                <div>
+                  <label className="block text-sm text-gray-300 mb-2">
+                    Portfolio Name *
+                  </label>
+                  <input
+                    className={`w-full bg-[#111111] bg-opacity-70 border rounded-lg p-2 sm:p-3 text-sm sm:text-base text-gray-300 transition-colors ${
+                      validationErrors.portfolioName
+                        ? "border-red-500 focus:border-red-400"
+                        : "border-gray-700 focus:border-[#d4fb2b]"
+                    }`}
+                    placeholder="Enter portfolio name"
+                    value={newPortfolioName}
+                    onChange={(e) => {
+                      setNewPortfolioName(e.target.value);
+                      if (validationErrors.portfolioName) {
+                        setValidationErrors((prev) => ({
+                          ...prev,
+                          portfolioName: null,
+                        }));
+                      }
+                    }}
+                    disabled={isSubmitting}
+                  />
+                  {validationErrors.portfolioName && (
+                    <div className="text-red-400 text-xs mt-1 flex items-center gap-1">
+                      <FiAlertCircle className="w-3 h-3" />
+                      {validationErrors.portfolioName}
+                    </div>
+                  )}
+                </div>
+
+                {/* Portfolio Description Input */}
+                <div>
+                  <label className="block text-sm text-gray-300 mb-2">
+                    Portfolio Description *
+                  </label>
+                  <textarea
+                    className={`w-full bg-[#111111] bg-opacity-70 border rounded-lg p-2 sm:p-3 text-sm sm:text-base text-gray-300 transition-colors resize-none ${
+                      validationErrors.portfolioDescription
+                        ? "border-red-500 focus:border-red-400"
+                        : "border-gray-700 focus:border-[#d4fb2b]"
+                    }`}
+                    placeholder="Enter portfolio description"
+                    rows={3}
+                    value={newPortfolioDescription}
+                    onChange={(e) => {
+                      setNewPortfolioDescription(e.target.value);
+                      if (validationErrors.portfolioDescription) {
+                        setValidationErrors((prev) => ({
+                          ...prev,
+                          portfolioDescription: null,
+                        }));
+                      }
+                    }}
+                    disabled={isSubmitting}
+                  />
+                  {validationErrors.portfolioDescription && (
+                    <div className="text-red-400 text-xs mt-1 flex items-center gap-1">
+                      <FiAlertCircle className="w-3 h-3" />
+                      {validationErrors.portfolioDescription}
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
               <div>
@@ -290,7 +367,9 @@ const AddToPortfolioMarketModal = ({ stock, onClose, onAdd }) => {
                 {contextLoading ? (
                   <div className="flex items-center justify-center p-4 border border-gray-700 rounded-lg">
                     <FiLoader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-[#d4fb2b] mr-2" />
-                    <span className="text-sm sm:text-base text-gray-400">Loading portfolios...</span>
+                    <span className="text-sm sm:text-base text-gray-400">
+                      Loading portfolios...
+                    </span>
                   </div>
                 ) : (
                   <>
@@ -334,7 +413,9 @@ const AddToPortfolioMarketModal = ({ stock, onClose, onAdd }) => {
                               }
                             }}
                           >
-                            <div className="text-sm sm:text-base text-gray-300">{portfolio.name}</div>
+                            <div className="text-sm sm:text-base text-gray-300">
+                              {portfolio.name}
+                            </div>
                           </div>
                         ))
                       ) : (
@@ -361,7 +442,9 @@ const AddToPortfolioMarketModal = ({ stock, onClose, onAdd }) => {
           {/* Quantity and Price */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm sm:text-base text-gray-300 mb-2">Quantity</label>
+              <label className="block text-sm sm:text-base text-gray-300 mb-2">
+                Quantity
+              </label>
               <input
                 className={`w-full bg-[#111111] bg-opacity-70 border rounded-lg p-2 sm:p-3 text-sm sm:text-base text-gray-300 transition-colors ${
                   validationErrors.quantity
@@ -375,7 +458,10 @@ const AddToPortfolioMarketModal = ({ stock, onClose, onAdd }) => {
                 onChange={(e) => {
                   setQuantity(e.target.value);
                   if (validationErrors.quantity) {
-                    setValidationErrors((prev) => ({ ...prev, quantity: null }));
+                    setValidationErrors((prev) => ({
+                      ...prev,
+                      quantity: null,
+                    }));
                   }
                 }}
                 disabled={isSubmitting}

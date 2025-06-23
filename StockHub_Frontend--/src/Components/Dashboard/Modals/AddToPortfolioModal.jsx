@@ -163,4 +163,4 @@ const AddToPortfolioModal = ({ isOpen, stock, onClose, onAdd }) => {
     </div>
   );
 };
-export default AddToPortfolioModal
+// export default AddToPortfolioModal
